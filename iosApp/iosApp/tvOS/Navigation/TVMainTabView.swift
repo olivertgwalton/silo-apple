@@ -76,7 +76,6 @@ struct TVMainTabView: View {
     /// renders as a scrimmed overlay over the page (§5.3) — not a pushed
     /// route or full-screen modal.
     @State private var openPanel: TVTopMenuPanel?
-    @State private var panelEntersFocus = false
     @State private var panelHasFocus = false
     @State private var panelFocusExitTask: Task<Void, Never>?
     @State private var controlReceiver = TVControlReceiver.shared
@@ -127,7 +126,6 @@ struct TVMainTabView: View {
                     focusRequestTarget: panelReturnFocus,
                     openPanel: openPanel,
                     panelHasFocus: panelHasFocus,
-                    panelEntersFocus: panelEntersFocus,
                     onSelectRoot: selectRoot(_:),
                     onSearch: { navigateFromBar(.search) },
                     onDwell: handleDwell(_:),
@@ -624,7 +622,6 @@ struct TVMainTabView: View {
 
         panelFocusExitTask?.cancel()
         panelFocusExitTask = nil
-        panelEntersFocus = false
         panelHasFocus = false
         withAnimation(reduceMotion ? nil : .easeOut(duration: ContinuumTheme.Skyline.cascadeScrimDuration)) {
             openPanel = panel
@@ -678,7 +675,6 @@ struct TVMainTabView: View {
         withAnimation(reduceMotion ? nil : .easeOut(duration: ContinuumTheme.Skyline.cascadeScrimDuration)) {
             openPanel = nil
         }
-        panelEntersFocus = false
         panelHasFocus = false
 
         // Returning focus to *that panel's* tab/avatar (§7) keeps the remote
@@ -708,12 +704,12 @@ struct TVMainTabView: View {
         let hadPanelFocus = panelHasFocus
         panelHasFocus = false
 
-        guard hadPanelFocus, openPanel != nil, panelEntersFocus else { return }
+        guard hadPanelFocus, openPanel != nil else { return }
 
         panelFocusExitTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: Self.panelFocusExitCloseDelayNanoseconds)
             guard !Task.isCancelled else { return }
-            guard openPanel != nil, panelEntersFocus, !panelHasFocus, !isTopMenuFocused else { return }
+            guard openPanel != nil, !panelHasFocus, !isTopMenuFocused else { return }
             closePanelForContentHandoff()
         }
     }
@@ -725,7 +721,6 @@ struct TVMainTabView: View {
         withAnimation(reduceMotion ? nil : .easeOut(duration: ContinuumTheme.Skyline.cascadeScrimDuration)) {
             openPanel = nil
         }
-        panelEntersFocus = false
         panelHasFocus = false
         suppressTopMenuFocusForContentHandoff()
     }
@@ -759,7 +754,6 @@ struct TVMainTabView: View {
         withAnimation(reduceMotion ? nil : .easeOut(duration: ContinuumTheme.Skyline.cascadeScrimDuration)) {
             openPanel = nil
         }
-        panelEntersFocus = false
         panelHasFocus = false
         selectRoot(.libraryType(type))
     }
@@ -778,7 +772,6 @@ struct TVMainTabView: View {
         withAnimation(reduceMotion ? nil : .easeOut(duration: ContinuumTheme.Skyline.cascadeScrimDuration)) {
             openPanel = nil
         }
-        panelEntersFocus = false
         panelHasFocus = false
         selectRoot(root)
     }
@@ -933,7 +926,7 @@ struct TVMainTabView: View {
     /// closing any panel, then explicitly re-arm that same focus zone after the
     /// graph changes so tvOS never has to repair from an ownerless state.
     private func reconcileVisibleRootsChange() {
-        let menuOwnedFocus = !isTopMenuFocusSuppressed || panelEntersFocus
+        let menuOwnedFocus = !isTopMenuFocusSuppressed || panelHasFocus
         let isShowingRoot = router.path.isEmpty
         let selectedRootWasRemoved = !visibleRoots.contains(selectedRoot)
         let focusRearm = tvVisibleRootsFocusRearm(
@@ -977,7 +970,6 @@ struct TVMainTabView: View {
             selectedRoot = root
             openPanel = nil
         }
-        panelEntersFocus = false
         panelHasFocus = false
         // Push focus into whichever root content is swapping in. Suppressing
         // the menu relinquishes its focus (TVTopMenuBar.onChange(isFocusSuppressed)),
