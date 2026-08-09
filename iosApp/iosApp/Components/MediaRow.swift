@@ -71,6 +71,9 @@ struct MediaRow: View {
     /// on a `focusRequest` change).
     @State private var lastAppliedFocusRequest = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Scope the programmatic kick re-resolves focus within.
+    @Namespace private var rowFocusScope
+    @Environment(\.resetFocus) private var resetFocus
     private static let focusLogger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "com.continuum.app",
         category: "TVFocus"
@@ -100,38 +103,11 @@ struct MediaRow: View {
         guard request > 0, request != lastAppliedFocusRequest,
               let firstItem = items.first else { return }
         lastAppliedFocusRequest = request
-        // Scroll home first, claim a turn later: a row parked deep in its
-        // strip keeps the first card unmounted (LazyHStack) or clipped, and
-        // the focus engine silently drops @FocusState writes to views it
-        // can't focus. The instant scroll mounts/unclips the card; the
-        // deferred write then lands on a focusable target.
         withAnimation(reduceMotion ? nil : .easeInOut(duration: ContinuumTheme.slowDuration)) {
             proxy.scrollTo(firstItem.id, anchor: .leading)
         }
-        DispatchQueue.main.async {
-            Self.focusLogger.debug("mediaRow.applyFocus request=\(request, privacy: .public)")
-            claimFirstItemFocus(firstItem)
-        }
-    }
-
-    /// Write the claim, then verify it actually stuck and re-assert if not.
-    /// A single write races two things that both win by coming later: the
-    /// engine's remembered-focus repair after the top bar resigns, and the
-    /// geometric re-repairs it makes while the feed's scroll-to-top slides
-    /// rows (and their cards) under whatever it had focused. @FocusState
-    /// reflects *actual* focus, so a rejected/overridden write reads back as
-    /// a different value — retry until the scroll settles and ours is last.
-    private func claimFirstItemFocus(_ firstItem: SectionItem, attempt: Int = 0) {
-        focusedItemId = firstItem.contentId
-        onItemFocus?(firstItem)
-        // Window must outlast the ~300ms animated ride home plus the engine's
-        // settling repairs, or the last mid-flight repair wins after all.
-        guard attempt < 8 else { return }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
-            guard focusedItemId != firstItem.contentId else { return }
-            Self.focusLogger.debug("mediaRow.reclaimFocus attempt=\(attempt + 1, privacy: .public)")
-            claimFirstItemFocus(firstItem, attempt: attempt + 1)
-        }
+        Self.focusLogger.debug("mediaRow.applyFocus request=\(request, privacy: .public)")
+        resetFocus(in: rowFocusScope)
     }
     #endif
 
@@ -229,6 +205,9 @@ struct MediaRow: View {
             firstItemId: items.first?.contentId,
             priority: defaultFocusPriority
         )
+        // `resetFocus(in:)` re-resolves within this scope, which is what makes
+        // the default-focus preference above fire for a programmatic kick.
+        .focusScope(rowFocusScope)
         // The programmatic focus kick needs the scroll proxy (it scrolls the
         // strip home before claiming), so it hangs off the strip rather than
         // the row's outer stack.

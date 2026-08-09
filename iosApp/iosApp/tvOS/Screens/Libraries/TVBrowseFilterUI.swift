@@ -36,9 +36,7 @@ struct TVBrowseControlRow: View {
             }
             .buttonStyle(TVBrowseControlPillStyle())
             .focused($focusedControl, equals: .sort)
-            .onMoveCommand { direction in
-                handleMove(from: .sort, direction)
-            }
+            .onMoveCommand(perform: handleVerticalExit)
 
             Button(action: onFilter) {
                 HStack(spacing: 10) {
@@ -55,9 +53,7 @@ struct TVBrowseControlRow: View {
             }
             .buttonStyle(TVBrowseControlPillStyle(active: filterCount > 0))
             .focused($focusedControl, equals: .filter)
-            .onMoveCommand { direction in
-                handleMove(from: .filter, direction)
-            }
+            .onMoveCommand(perform: handleVerticalExit)
 
             Spacer(minLength: 0)
         }
@@ -73,18 +69,12 @@ struct TVBrowseControlRow: View {
         focusedControl = .sort
     }
 
-    private func handleMove(from control: TVBrowseControlFocus, _ direction: MoveCommandDirection) {
+
+    private func handleVerticalExit(_ direction: MoveCommandDirection) {
         switch direction {
-        case .up:
-            onMoveUp?()
-        case .down:
-            onMoveDown?()
-        case .left where control == .filter:
-            focusedControl = .sort
-        case .right where control == .sort:
-            focusedControl = .filter
-        default:
-            break
+        case .up: onMoveUp?()
+        case .down: onMoveDown?()
+        default: break
         }
     }
 }
