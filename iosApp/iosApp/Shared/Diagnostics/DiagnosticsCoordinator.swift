@@ -322,13 +322,6 @@ actor DiagnosticsCoordinator {
         return profileEligibilityStore.isChild(profileID: activeProfileID, binding: binding)
     }
 
-    func pendingReportsForCurrentBinding() async -> [PendingReport] {
-        guard let context = await captureContext(requirePersistentCapture: false) else {
-            return []
-        }
-        return pendingStore.listReports(for: context.binding, now: Date())
-    }
-
     func pendingReports(for binding: DiagnosticsBinding) -> [PendingReport] {
         pendingStore.listReports(for: binding, now: Date())
     }

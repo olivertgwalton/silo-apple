@@ -378,24 +378,12 @@ actor ContinuumAPI {
         try await http.get("/api/v1/settings/subtitle_appearance/effective")
     }
 
-    func getDeviceSetting(key: String) async throws -> SettingEntryResponse {
-        try await http.get("/api/v1/settings/device/\(key)")
-    }
-
     func setDeviceSetting(key: String, value: String) async throws {
         try await http.putVoid("/api/v1/settings/device/\(key)", body: SetSettingBody(value: value))
     }
 
     func deleteDeviceSetting(key: String) async throws {
         try await http.delete("/api/v1/settings/device/\(key)")
-    }
-
-    func setDeviceSubtitleAppearanceOverride(_ appearance: SubtitleAppearance) async throws {
-        try await setDeviceSetting(key: "subtitle_appearance", value: appearance.jsonString)
-    }
-
-    func deleteDeviceSubtitleAppearanceOverride() async throws {
-        try await deleteDeviceSetting(key: "subtitle_appearance")
     }
 
     func setSetting(key: String, value: String) async throws {
@@ -433,10 +421,6 @@ actor ContinuumAPI {
             "/api/v1/home/dismissals/continue_watching/\(contentId)",
             body: HomeDismissalBody(progressUpdatedAt: progressUpdatedAt)
         )
-    }
-
-    func undoDismissContinueWatchingItem(contentId: String) async throws {
-        try await http.delete("/api/v1/home/dismissals/continue_watching/\(contentId)")
     }
 
     func librarySections(libraryId: Int) async throws -> SectionsResponse {

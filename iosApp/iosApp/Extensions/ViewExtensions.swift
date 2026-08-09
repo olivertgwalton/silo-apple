@@ -14,18 +14,6 @@ extension View {
         self.background(Color.continuumBackground.ignoresSafeArea())
     }
 
-    /// Card-style surface with rounded corners — zero elevation (Plezy style).
-    func continuumCard() -> some View {
-        self
-            .background(Color.continuumSurface)
-            .clipShape(RoundedRectangle(cornerRadius: ContinuumTheme.cornerRadius))
-    }
-
-    /// Standard content padding on all sides.
-    func continuumPadding() -> some View {
-        self.padding(ContinuumTheme.padding)
-    }
-
     /// Hide the view conditionally.
     @ViewBuilder
     func hidden(_ isHidden: Bool) -> some View {

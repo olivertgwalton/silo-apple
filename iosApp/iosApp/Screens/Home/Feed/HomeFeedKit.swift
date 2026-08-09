@@ -79,17 +79,6 @@ enum HomeFeedMeta {
         return min(max(position / duration, 0), 1)
     }
 
-    /// "1968  ·  Horror  ·  1h 36m" — the meta line under a hero title.
-    static func heroLine(for item: SectionItem, maxGenres: Int = 2) -> String {
-        var parts: [String] = []
-        if let year = item.year { parts.append(String(year)) }
-        if let genres = item.genres, !genres.isEmpty {
-            parts.append(contentsOf: genres.prefix(maxGenres))
-        }
-        if let runtime = runtime(minutes: item.runtime) { parts.append(runtime) }
-        return parts.joined(separator: "  ·  ")
-    }
-
     static func episodeCode(for item: SectionItem) -> String? {
         guard let season = item.seasonNumber, let episode = item.episodeNumber else { return nil }
         return "S\(season) E\(episode)"
