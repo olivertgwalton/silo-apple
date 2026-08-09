@@ -341,7 +341,7 @@ struct TVSeasonDetailView<BelowSynopsis: View>: View {
     private var detailsSection: some View {
         VStack(alignment: .leading, spacing: 28) {
             TVSectionHeader(title: "Details")
-            TVDetailFactsSection(detail: detail)
+            DetailFactsSection(detail: detail, metrics: .television)
         }
     }
 }

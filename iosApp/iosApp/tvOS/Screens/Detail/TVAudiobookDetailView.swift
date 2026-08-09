@@ -11,7 +11,7 @@ import SwiftUI
 /// (Option C v2).
 ///
 /// Focus: the action row is a flat set of sibling `Button`s so the tvOS focus
-/// engine owns movement (native-graph model, per `docs/tvos-focus.md`). We
+/// engine owns movement (native-graph model). We
 /// seed initial focus onto Resume with `@FocusState` + `defaultFocus` because
 /// geometry would otherwise pick the (higher) first control inconsistently.
 /// Below-fold rows/rails are ordinary vertical focus progression.

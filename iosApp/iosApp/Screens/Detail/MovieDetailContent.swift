@@ -390,7 +390,7 @@ struct MovieDetailContent<BelowOverview: View>: View {
     private var detailsSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             PhoneSectionHeader(title: "Details")
-            PhoneDetailFactsSection(detail: detail)
+            DetailFactsSection(detail: detail)
         }
     }
 
