@@ -62,12 +62,9 @@ struct TVCascadeSelector: View {
     @State private var flyoutFollowTask: Task<Void, Never>?
     /// Each library row's vertical center in the level-1 HStack's coordinate
     /// space. The flyout offsets to align its first section with the anchored
-    /// row, so the composite highlight does not visually jump on Right.
-    @State private var libraryRowCenters: [Int: CGFloat] = [:]
     /// The first flyout section row's vertical center in the flyout's own
     /// coordinate space. Measured rather than estimated so font/padding changes
     /// do not break directional focus geometry.
-    @State private var flyoutFirstSectionCenter: CGFloat?
 
     /// Focus target inside the panel: a level-1 library row, or a level-2
     /// section row, scoped to its library so the same pill in two libraries
@@ -134,43 +131,15 @@ struct TVCascadeSelector: View {
             flyout
                 .frame(width: ContinuumTheme.Skyline.flyoutWidth, alignment: .top)
                 .opacity(flyoutAnchorId != nil ? 1 : 0)
-                .padding(.top, flyoutTopPadding)
-                // Animate the follow on the *discrete* anchor change, never on
-                // `flyoutTopPadding` itself. `flyoutTopPadding` is derived from
-                // live GeometryReader→preference measurements; animating on it
-                // makes sub-pixel re-measure jitter re-arm the animation every
-                // layout pass, so `AnimatorState.combine` accumulates without
-                // bound and the CA transaction never commits (hard UI freeze).
+                // Animate the follow on the discrete anchor change only.
                 .animation(
                     reduceMotion ? nil : .easeInOut(duration: ContinuumTheme.Skyline.flyoutOpenDuration),
                     value: flyoutAnchorId
                 )
         }
-        .coordinateSpace(name: Self.cascadeSpace)
-        .onPreferenceChange(TVCascadeLibraryRowCenterKey.self) { centers in
-            // Cache every row center; the offset is derived so it updates both
-            // when rows move (re-layout) and when the anchor changes.
-            libraryRowCenters = centers
-        }
-        .onPreferenceChange(TVCascadeFlyoutFirstSectionCenterKey.self) { center in
-            flyoutFirstSectionCenter = center
-        }
         .fixedSize()
     }
 
-    /// Vertical padding that aligns the first flyout section with the anchored
-    /// library row. The cascade is one composite focus target; this keeps the
-    /// visual highlight continuous when Right enters the section column.
-    private var flyoutTopPadding: CGFloat {
-        guard let anchorId = flyoutAnchorId,
-              let rowCenter = libraryRowCenters[anchorId],
-              let sectionCenter = flyoutFirstSectionCenter
-        else { return 0 }
-        return max(0, rowCenter - sectionCenter)
-    }
-
-    private static let cascadeSpace = "cascade"
-    private static let flyoutSpace = "cascadeFlyout"
 
     private var librariesPanel: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -227,23 +196,10 @@ struct TVCascadeSelector: View {
             .buttonStyle(.plain)
             .focused($focusedRow, equals: .library(library.id))
             .id(Focus.library(library.id))
-            // Report this row's center in the level-1 HStack's coordinate
-            // space so the flyout can align its first section row with it.
-            // This survives the panel's ScrollView / nested stacks, which a
-            // custom VerticalAlignment guide would not.
-            .background(libraryRowCenterReporter(for: library))
             .accessibilityLabel(accessibilityLabel(for: library, isCurrent: isCurrent))
             .accessibilityAddTraits(isCurrent ? .isSelected : [])
     }
 
-    private func libraryRowCenterReporter(for library: Library) -> some View {
-        GeometryReader { geo in
-            Color.clear.preference(
-                key: TVCascadeLibraryRowCenterKey.self,
-                value: [library.id: geo.frame(in: .named(Self.cascadeSpace)).midY]
-            )
-        }
-    }
 
     // MARK: - Single-level (single library)
 
@@ -283,7 +239,6 @@ struct TVCascadeSelector: View {
                         sectionRow(pill, in: library)
                             .background {
                                 if pill == pills.first {
-                                    firstFlyoutSectionCenterReporter()
                                 }
                             }
                     }
@@ -295,10 +250,8 @@ struct TVCascadeSelector: View {
                 cornerRadius: ContinuumTheme.Skyline.flyoutCornerRadius
             ))
             .fixedSize()
-            .coordinateSpace(name: Self.flyoutSpace)
             // Crossfade the section list as the flyout follows focus to a
-            // new library; the vertical alignment is handled by
-            // `flyoutTopPadding`, so a scale here would compound with it.
+            // new library.
             .id(anchorId)
             .transition(.opacity)
             .accessibilityElement(children: .contain)
@@ -306,14 +259,6 @@ struct TVCascadeSelector: View {
         }
     }
 
-    private func firstFlyoutSectionCenterReporter() -> some View {
-        GeometryReader { geo in
-            Color.clear.preference(
-                key: TVCascadeFlyoutFirstSectionCenterKey.self,
-                value: geo.frame(in: .named(Self.flyoutSpace)).midY
-            )
-        }
-    }
 
     @ViewBuilder
     private func sectionRow(_ pill: TVLibraryPill, in library: Library) -> some View {
@@ -516,23 +461,6 @@ private struct TVCascadeSectionRowLabel: View {
 /// Each library row's vertical center, keyed by library id, in the level-1
 /// panel HStack's coordinate space. The flyout reads the anchored row's value
 /// to align its first section with the row.
-private struct TVCascadeLibraryRowCenterKey: PreferenceKey {
-    static let defaultValue: [Int: CGFloat] = [:]
 
-    static func reduce(value: inout [Int: CGFloat], nextValue: () -> [Int: CGFloat]) {
-        value.merge(nextValue()) { _, new in new }
-    }
-}
-
-/// First flyout section row center, measured in the flyout's own coordinate
-/// space. This captures the flyout header/padding without hardcoding them into
-/// the focus math.
-private struct TVCascadeFlyoutFirstSectionCenterKey: PreferenceKey {
-    static let defaultValue: CGFloat? = nil
-
-    static func reduce(value: inout CGFloat?, nextValue: () -> CGFloat?) {
-        value = nextValue() ?? value
-    }
-}
 
 #endif
