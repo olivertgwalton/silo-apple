@@ -352,13 +352,6 @@ final class PendingReportStore {
         return loadDateMap(Self.seenFingerprintsFile)[fingerprint] != nil
     }
 
-    func markFingerprintSeen(_ fingerprint: String, now: Date = Date()) {
-        lock.lock()
-        defer { lock.unlock() }
-
-        markFingerprintSeenLocked(fingerprint, now: now)
-    }
-
     func canAutoUpload(fingerprint: String, binding: DiagnosticsBinding, now: Date = Date()) -> Bool {
         lock.lock()
         defer { lock.unlock() }

@@ -64,10 +64,6 @@ final class ContinuumMacPlayerView: AVPlayerView {
         overlayParent.addSubview(subtitleOverlay, positioned: .above, relativeTo: nil)
     }
 
-    private func positionSubtitleOverlays() {
-        overlayParent.addSubview(subtitleOverlay, positioned: .above, relativeTo: nil)
-    }
-
     override func layout() {
         super.layout()
         let frame = videoBounds.isEmpty ? bounds : videoBounds
