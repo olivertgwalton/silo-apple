@@ -129,6 +129,9 @@ struct TVBrowseSortPanel: View {
         .frame(width: 460)
         .modifier(TVSkylinePanelChrome())
         .focusScope(sortFocusScope)
+        // Names the current sort as the scope's preferred target, so the
+        // `resetFocus` in `claimFocus` lands there without a manual write.
+        .defaultFocus($focusedSort, focusTarget, priority: .userInitiated)
         .focusSection()
         .onExitCommand(perform: onClose)
         .onAppear { claimFocus() }
@@ -142,12 +145,7 @@ struct TVBrowseSortPanel: View {
     }
 
     private func claimFocus() {
-        focusedSort = focusTarget
-        Task { @MainActor in
-            await Task.yield()
-            resetFocus(in: sortFocusScope)
-            focusedSort = focusTarget
-        }
+        resetFocus(in: sortFocusScope)
     }
 }
 
@@ -185,6 +183,10 @@ struct TVBrowseFilterPanel: View {
     @State private var screen: Screen = .filters
     @State private var lastFacet: CatalogFacet?
     @FocusState private var focusedTarget: FocusTarget?
+    /// The target the next focus resolution should land on. Named through
+    /// `.defaultFocus` so `resetFocus(in:)` can hand the move to the engine
+    /// rather than writing `@FocusState` and hoping it sticks.
+    @State private var pendingFocusTarget: FocusTarget?
 
     private let availableFacets: [CatalogFacet]
 
@@ -234,6 +236,7 @@ struct TVBrowseFilterPanel: View {
         .frame(width: 680, height: 680, alignment: .topLeading)
         .modifier(TVSkylinePanelChrome())
         .focusScope(panelFocusScope)
+        .defaultFocus($focusedTarget, pendingFocusTarget, priority: .userInitiated)
         .focusSection()
         .onExitCommand(perform: handleExit)
         .onMoveCommand { direction in
@@ -533,13 +536,12 @@ struct TVBrowseFilterPanel: View {
         onClose()
     }
 
+    /// Point the scope's default focus at `target`, then ask the engine to
+    /// re-resolve. It does the move itself, so there is no `@FocusState`
+    /// write to be overridden and no second write after a yield.
     private func claimFocus(_ target: FocusTarget?) {
-        focusedTarget = target
-        Task { @MainActor in
-            await Task.yield()
-            resetFocus(in: panelFocusScope)
-            focusedTarget = target
-        }
+        pendingFocusTarget = target
+        resetFocus(in: panelFocusScope)
     }
 }
 
