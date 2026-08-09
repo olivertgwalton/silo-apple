@@ -328,6 +328,7 @@ private struct PhonePlaybackSelectorSheet: View {
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         #endif
+        .presentationSizing(.form)
     }
 
     @ViewBuilder
