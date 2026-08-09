@@ -1,8 +1,9 @@
 import SwiftUI
 
-/// A poster grid — 3 columns on iPhone / iPad compact width, 5 on iPad
-/// regular width, 6 columns on tvOS. Cards handle their own focus lift on
-/// tvOS.
+/// A poster grid. Off tvOS the column count follows the width the grid is
+/// actually given (see `AdaptiveColumns`), so a resized Mac window and iPad
+/// Split View re-flow instead of stretching a fixed count. tvOS keeps its
+/// fixed 6-column layout; cards handle their own focus lift there.
 struct CatalogGrid: View {
     let items: [BrowseItem]
     let isLoading: Bool
@@ -11,6 +12,8 @@ struct CatalogGrid: View {
     let onLoadMore: () -> Void
     @Environment(AppRouter.self) private var router
     @State private var uiCustomization = UICustomizationPreferences.shared
+
+    @State private var gridWidth: CGFloat = 0
 
     #if os(tvOS)
     private var columns: [GridItem] {
@@ -28,6 +31,7 @@ struct CatalogGrid: View {
     private var columns: [GridItem] {
         AdaptiveColumns.posters(
             for: hSize,
+            availableWidth: gridWidth,
             posterSize: uiCustomization.cardPresentation.posterSize,
             spacing: 8
         )
@@ -58,6 +62,7 @@ struct CatalogGrid: View {
                 }
             }
         }
+        .posterGridWidth($gridWidth)
 
         if isLoading {
             HStack {
