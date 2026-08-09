@@ -1,20 +1,23 @@
-#if !os(tvOS)
 import Foundation
 
 /// A token in the hero's facts row. `.text` items get a middle-dot
 /// separator between them; `.rating` renders a green check + maturity
 /// label; `.chip` renders an outlined uppercase pill (4K / HDR / ATMOS / CC).
-enum PhoneHeroFactToken: Hashable {
+enum DetailHeroFactToken: Hashable {
     case text(String)
     case rating(String)
     case chip(String)
 }
 
-/// Builds the eyebrow / source / facts / starring strings shown by the
-/// phone hero from an `ItemDetail`. Mirrors `TVHeroMetadata` — the same
-/// editorial logic, just exposed under an iOS-only namespace so the
-/// tvOS surface doesn't leak across.
-enum PhoneHeroMetadata {
+/// Builds the eyebrow / source / facts / starring strings shown by every
+/// detail hero, from an `ItemDetail`.
+///
+/// One formatter for all platforms. The phone, Mac and Apple TV heroes lay
+/// these out very differently, but "what does this row say" is the same
+/// question everywhere — and when it lived twice, the two copies drifted in
+/// whitespace and were one edit away from drifting in substance.
+
+enum DetailHeroMetadata {
 
     // MARK: - Source row
 
@@ -61,8 +64,8 @@ enum PhoneHeroMetadata {
 
     // MARK: - Facts row
 
-    static func movieFactsLine(from detail: ItemDetail, version selectedVersion: FileVersion? = nil) -> [PhoneHeroFactToken] {
-        var tokens: [PhoneHeroFactToken] = []
+    static func movieFactsLine(from detail: ItemDetail, version selectedVersion: FileVersion? = nil) -> [DetailHeroFactToken] {
+        var tokens: [DetailHeroFactToken] = []
         if detail.type == "episode",
            let airDate = DetailDateFormatting.abbreviatedDate(detail.airDate) {
             tokens.append(.text(airDate))
@@ -79,8 +82,8 @@ enum PhoneHeroMetadata {
         return tokens
     }
 
-    static func seriesFactsLine(from detail: ItemDetail) -> [PhoneHeroFactToken] {
-        var tokens: [PhoneHeroFactToken] = []
+    static func seriesFactsLine(from detail: ItemDetail) -> [DetailHeroFactToken] {
+        var tokens: [DetailHeroFactToken] = []
         if let year = detail.year, year > 0 { tokens.append(.text(String(year))) }
         if let count = detail.seasonCount, count > 0 {
             tokens.append(.text("\(count) Season\(count == 1 ? "" : "s")"))
@@ -165,9 +168,9 @@ enum PhoneHeroMetadata {
         }
     }
 
-    private static func qualityTokens(from detail: ItemDetail, version selectedVersion: FileVersion? = nil) -> [PhoneHeroFactToken] {
+    private static func qualityTokens(from detail: ItemDetail, version selectedVersion: FileVersion? = nil) -> [DetailHeroFactToken] {
         guard let version = selectedVersion ?? preferredVersion(from: detail) else { return [] }
-        var tokens: [PhoneHeroFactToken] = []
+        var tokens: [DetailHeroFactToken] = []
         if let res = resolutionLabel(version.resolution) { tokens.append(.chip(res)) }
         if version.hdr == true {
             tokens.append(.chip(dolbyVisionLabel(version: version) ?? "HDR"))
@@ -234,5 +237,13 @@ enum PhoneHeroMetadata {
         }
         return "\(minutes) min"
     }
+
+    /// Leading cast line for the hero. Three names is what fits the layouts
+    /// without wrapping on any platform.
+    static func starringText(from detail: ItemDetail) -> String? {
+        guard let cast = detail.cast, !cast.isEmpty else { return nil }
+        let names = cast.prefix(3).map(\.name)
+        guard !names.isEmpty else { return nil }
+        return "Starring " + names.joined(separator: ", ")
+    }
 }
-#endif

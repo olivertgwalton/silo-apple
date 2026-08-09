@@ -70,7 +70,7 @@ struct SeasonDetailContent<BelowOverview: View>: View {
             backdropUrl: detail.backdropUrl,
             backdropThumbhash: detail.backdropThumbhash,
             eyebrow: detail.seriesTitle,
-            sourceTokens: PhoneHeroMetadata.seasonSourceTokens(
+            sourceTokens: DetailHeroMetadata.seasonSourceTokens(
                 from: detail,
                 episodeCount: episodes.count
             ),

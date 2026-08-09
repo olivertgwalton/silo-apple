@@ -84,12 +84,12 @@ struct TVMovieDetailView<BelowSynopsis: View>: View {
                         seriesTitle: detail.type == "episode" ? detail.seriesTitle : nil,
                         logoUrl: detail.logoUrl,
                         backdropUrl: detail.backdropUrl,
-                        eyebrow: detail.type == "episode" ? nil : TVHeroMetadata.eyebrow(from: detail),
-                        sourceTokens: TVHeroMetadata.movieSourceTokens(from: detail),
-                        ratingChip: TVHeroMetadata.contentRatingChip(from: detail),
+                        eyebrow: detail.type == "episode" ? nil : DetailHeroMetadata.eyebrow(from: detail),
+                        sourceTokens: DetailHeroMetadata.movieSourceTokens(from: detail),
+                        ratingChip: DetailHeroMetadata.contentRatingChip(from: detail),
                         overview: detail.overview,
-                        factsLine: TVHeroMetadata.movieFactsLine(from: detail, version: currentVersion),
-                        starringText: TVHeroMetadata.starringText(from: detail),
+                        factsLine: DetailHeroMetadata.movieFactsLine(from: detail, version: currentVersion),
+                        starringText: DetailHeroMetadata.starringText(from: detail),
                         actions: { actionColumn },
                         belowSynopsis: belowSynopsis
                     )
