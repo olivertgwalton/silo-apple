@@ -381,10 +381,10 @@ struct TVCascadeSelector: View {
 
     // MARK: - Focus plumbing
 
-    /// Seed the highlighted row the moment the engine hands focus in, and
-    /// clear it when focus leaves. `panelFocused` is the single source of
-    /// truth for "is the panel entered" — the host reads it through
-    /// `onPanelFocusChanged` rather than keeping its own copy.
+    /// Seed the highlighted row the moment the engine hands focus in.
+    /// `panelFocused` is the single source of truth for "is the panel
+    /// entered" — the host reads it through `onPanelFocusChanged` rather
+    /// than keeping its own copy.
     private func seedFocusOnEntry() {
         if isSingleLibrary, let library = libraries.first {
             // Single-level: land on the first section (§5.3).
@@ -416,10 +416,16 @@ struct TVCascadeSelector: View {
     }
 
     private func handlePanelFocusedChange(_ isFocused: Bool) {
-        if isFocused {
-            if focus == nil { seedFocusOnEntry() }
-        } else {
-            focus = nil
+        // Seed the highlight on entry, and never clear it on loss. Focus
+        // drops for a frame while the anchored overlay mounts, and clearing
+        // there threw the seed away — the first Down entered the panel but
+        // highlighted nothing, so it took a second press to land on a row.
+        //
+        // The highlight is passive state, not focus: it can safely outlive a
+        // transient drop, and the panel's `@State` resets when it unmounts on
+        // close, so a reopened panel still seeds fresh.
+        if isFocused, focus == nil {
+            seedFocusOnEntry()
         }
         onPanelFocusChanged(isFocused)
     }
