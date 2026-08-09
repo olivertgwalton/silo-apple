@@ -40,6 +40,8 @@ struct SearchMediaTypeMenu: View {
             )
             .contentShape(Capsule())
         }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
         .menuOrder(.fixed)
         .accessibilityLabel("Media type")
         .accessibilityValue(selectedMediaType.title)

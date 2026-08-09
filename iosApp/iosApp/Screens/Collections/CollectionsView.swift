@@ -157,6 +157,8 @@ struct CollectionsView: View {
                     Image(systemName: "ellipsis.circle")
                         .foregroundColor(.continuumSecondaryText)
                 }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
             }
         }
     }
@@ -224,7 +226,11 @@ struct CollectionsView: View {
             }
             .continuumNavigationBarSurfaceBackground()
         }
+        #if !os(macOS)
         .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+        #endif
+        .presentationSizing(.form)
     }
 }
 
@@ -255,7 +261,11 @@ private struct GroupActionSheet: View {
                 }
                 .continuumNavigationBarSurfaceBackground()
         }
+        #if !os(macOS)
         .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+        #endif
+        .presentationSizing(.form)
         .onAppear {
             switch action {
             case .rename(let g): name = g.name
@@ -439,10 +449,12 @@ struct LibraryCollectionsView: View {
     @State private var viewModel = LibraryCollectionsViewModel()
     @State private var uiCustomization = UICustomizationPreferences.shared
     @Environment(\.horizontalSizeClass) private var hSize
+    @State private var gridWidth: CGFloat = 0
 
     private var columns: [GridItem] {
         AdaptiveColumns.posters(
             for: hSize,
+            availableWidth: gridWidth,
             posterSize: uiCustomization.cardPresentation.posterSize
         )
     }
@@ -506,6 +518,7 @@ struct LibraryCollectionsView: View {
                     .accessibilityLabel(libraryCollectionAccessibilityLabel(collection))
                 }
             }
+            .posterGridWidth($gridWidth)
         }
     }
 }

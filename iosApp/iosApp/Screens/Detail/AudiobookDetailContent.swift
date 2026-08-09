@@ -366,6 +366,8 @@ struct AudiobookDetailContent: View {
                         .overlay(Circle().stroke(Color.white.opacity(0.25), lineWidth: 1))
                 )
         }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
         .accessibilityLabel("Playback Speed")
     }
 

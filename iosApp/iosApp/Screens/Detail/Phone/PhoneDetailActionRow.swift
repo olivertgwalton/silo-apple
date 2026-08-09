@@ -113,6 +113,8 @@ struct PhoneLabeledMenu<MenuContent: View>: View {
             .frame(maxWidth: .infinity, minHeight: 44)
             .contentShape(Rectangle())
         }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
         .accessibilityLabel(label)
     }
 }

@@ -121,6 +121,8 @@ struct PhoneCircleMenuButton<MenuContent: View>: View {
                         )
                 )
         }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
         .accessibilityLabel(accessibilityLabel)
     }
 }
