@@ -428,6 +428,7 @@ struct ContentView: View {
             // Fall through to the existing video route when the type cannot be resolved.
         }
 
+        #if os(tvOS)
         router.navigate(
             to: .player(
                 contentId: contentId,
@@ -435,6 +436,12 @@ struct ContentView: View {
                 resumePosition: nil
             )
         )
+        #else
+        // iOS and macOS resolve the player through `presentedPlayer`, not the
+        // navigation stack; pushing the route here would land on the empty
+        // exhaustiveness arm.
+        router.presentPlayer(contentId: contentId)
+        #endif
     }
 
     @ViewBuilder
@@ -718,7 +725,9 @@ private struct DebugPlayerPresentationModifier: ViewModifier {
     func body(content: Content) -> some View {
         #if os(macOS)
         content.sheet(isPresented: $isPresented) {
-            player
+            // Debug-only launch-argument path. A macOS sheet sizes to its
+            // content and video reports none, so give it a window-shaped frame.
+            player.frame(minWidth: 960, minHeight: 540)
         }
         #else
         content.fullScreenCover(isPresented: $isPresented) {
@@ -1043,25 +1052,16 @@ struct MainTabView: View {
                 visibleDestinations: visibleDestinations
             )
         }
+        // One call on every platform. `playerCover` resolves to a
+        // `fullScreenCover` on iOS/tvOS and to a window takeover on macOS,
+        // swapped by target membership rather than a conditional here.
+        .playerCover(presentation: $router.presentedPlayer)
         #if !os(macOS)
         .fullScreenCover(isPresented: Binding(
             get: { audioStore.isShowingFullPlayer },
             set: { if !$0 { audioStore.dismissFullPlayer() } }
         )) {
             AudioFullPlayerView()
-        }
-        .fullScreenCover(item: $router.presentedPlayer) { payload in
-            PlayerView(
-                contentId: payload.contentId,
-                preferredFileId: payload.fileId,
-                preferredAudioTrackIndex: payload.audioTrackIndex,
-                preferredSubtitleTrackIndex: payload.subtitleTrackIndex,
-                startFromBeginning: payload.startFromBeginning,
-                resumePositionOverride: payload.resumePosition,
-                offlineDownloadId: payload.offlineDownloadId,
-                posterURLHint: payload.posterURL,
-                backdropURLHint: payload.backdropURL
-            )
         }
         #if os(iOS)
         .sheet(isPresented: Binding(
@@ -1180,9 +1180,9 @@ struct MainTabView: View {
     /// default sidebar toggle isn't visible on those screens). We inject a
     /// toggle closure through `\.sidebarToggle` instead — each custom header
     /// renders a `SidebarToggleButton` on its leading edge, which collapses
-    /// and re-expands the sidebar. Video playback doesn't overlap the sidebar
-    /// because the player is presented via `fullScreenCover` on
-    /// `router.presentedPlayer` rather than pushed into the detail pane.
+    /// and re-expands the sidebar. Video playback never lands in the detail
+    /// pane: `router.presentedPlayer` drives a `fullScreenCover` on iPadOS and
+    /// a dedicated `MacPlayerWindow` on macOS.
     private var sidebarLayout: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             List(selection: Binding<MainTabDestinationID?>(
@@ -1314,39 +1314,14 @@ struct MainTabView: View {
                 #endif
         case .personDetail(let personId):
             PersonDetailView(personId: personId)
-        case .player(let contentId, let startFromBeginning, let resumePosition):
-            #if os(macOS)
-            PlayerView(
-                contentId: contentId,
-                startFromBeginning: startFromBeginning,
-                resumePositionOverride: resumePosition
-            )
-            #else
-            // Player is presented as a full-screen cover (see MainTabView)
-            // so it isn't boxed into the iPad detail pane. This route arm
-            // exists only so switch exhaustiveness holds.
+        case .player:
+            // The player is never pushed: iOS/iPadOS present it as a
+            // full-screen cover and macOS opens a dedicated window (both via
+            // `router.presentedPlayer`), so video is never boxed into the
+            // detail pane. These arms exist only so exhaustiveness holds.
             EmptyView()
-            #endif
-        case .playerWithFile(
-            let contentId,
-            let fileId,
-            let audioTrackIndex,
-            let subtitleTrackIndex,
-            let startFromBeginning,
-            let resumePosition
-        ):
-            #if os(macOS)
-            PlayerView(
-                contentId: contentId,
-                preferredFileId: fileId,
-                preferredAudioTrackIndex: audioTrackIndex,
-                preferredSubtitleTrackIndex: subtitleTrackIndex,
-                startFromBeginning: startFromBeginning,
-                resumePositionOverride: resumePosition
-            )
-            #else
+        case .playerWithFile:
             EmptyView()
-            #endif
         case .favorites:
             FavoritesView()
         case .watchlist:
@@ -1382,19 +1357,8 @@ struct MainTabView: View {
             #else
             DownloadsView()
             #endif
-        case .offlinePlayer(let downloadId, let contentId, let startFromBeginning, let resumePosition):
-            #if os(macOS)
-            PlayerView(
-                contentId: contentId,
-                startFromBeginning: startFromBeginning,
-                resumePositionOverride: resumePosition,
-                offlineDownloadId: downloadId
-            )
-            #else
-            // Presented as a full-screen cover (see MainTabView). This arm
-            // exists only for switch exhaustiveness.
+        case .offlinePlayer:
             EmptyView()
-            #endif
         case .offlineSeriesBrowse(let seriesId):
             #if os(tvOS)
             EmptyStateView(icon: "questionmark.circle", title: "Unknown", subtitle: nil)

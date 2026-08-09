@@ -52,6 +52,7 @@ targets:
           - "**/*.xcodeproj"
           - "**/*.xcworkspace"
           - "macOS/**"
+          - "tvOS/PlayerView.swift"
       - path: Resources
         buildPhase: resources
     # PRODUCT_BUNDLE_IDENTIFIER and CODE_SIGN_ENTITLEMENTS live in
@@ -106,6 +107,7 @@ targets:
           - "**/*.xcworkspace"
           - "Info.plist"
           - "macOS/**"
+          - "Screens/Player/PlayerView.swift"
       - path: Resources
         buildPhase: resources
     # PRODUCT_BUNDLE_IDENTIFIER and CODE_SIGN_ENTITLEMENTS live in
@@ -157,6 +159,7 @@ targets:
           - "Screens/Player/iOS/**"
           - "Screens/Player/tvOS/**"
           - "Screens/Player/PlayerView.swift"
+          - "Screens/Player/PlayerCover.swift"
       - path: iosApp/Screens/Player/PlayerTimeFormatter.swift
       - path: iosApp/tvOS/Caching/CachedAsyncImage.swift
       - path: iosApp/tvOS/Caching/PosterImageCache.swift
