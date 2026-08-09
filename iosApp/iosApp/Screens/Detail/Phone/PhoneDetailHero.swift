@@ -20,7 +20,7 @@ struct PhoneDetailHero<Actions: View, BelowOverview: View>: View {
     let sourceTokens: [String]
     let ratingChip: String?
     let overview: String?
-    let factsLine: [PhoneHeroFactToken]
+    let factsLine: [DetailHeroFactToken]
     /// Overlay data for the backdrop. `nil` skips overlay rendering
     /// (e.g. when the detail payload didn't carry an OverlaySummary).
     var overlayData: OverlayData? = nil
@@ -425,7 +425,7 @@ private struct PhoneHeroTitle: View {
     let textAlignment: TextAlignment
 
     var body: some View {
-        let parts = PhoneHeroMetadata.splitTitle(title)
+        let parts = DetailHeroMetadata.splitTitle(title)
         VStack(spacing: 4) {
             Text(parts.primary)
                 .font(.system(size: 30, weight: .heavy))
@@ -456,7 +456,7 @@ private struct PhoneEpisodeHierarchyTitle: View {
     let textAlignment: TextAlignment
 
     var body: some View {
-        let parts = PhoneHeroMetadata.splitTitle(episodeTitle)
+        let parts = DetailHeroMetadata.splitTitle(episodeTitle)
         VStack(spacing: 6) {
             Text(seriesTitle)
                 .font(.system(size: 34, weight: .heavy))
@@ -513,7 +513,7 @@ private struct PhoneHeroEyebrow: View {
 /// wrapping, so we lean on `Layout` to flow the chips like Apple's
 /// quality-badge row beneath the overview.
 private struct FlowingFactsRow: View {
-    let tokens: [PhoneHeroFactToken]
+    let tokens: [DetailHeroFactToken]
     let alignment: HorizontalAlignment
 
     var body: some View {
@@ -532,7 +532,7 @@ private struct FlowingFactsRow: View {
     }
 
     @ViewBuilder
-    private func factsItem(_ token: PhoneHeroFactToken) -> some View {
+    private func factsItem(_ token: DetailHeroFactToken) -> some View {
         switch token {
         case .text(let value):
             Text(value)
