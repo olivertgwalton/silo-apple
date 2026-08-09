@@ -77,7 +77,6 @@ struct TVMainTabView: View {
     /// route or full-screen modal.
     @State private var openPanel: TVTopMenuPanel?
     @State private var panelEntersFocus = false
-    @State private var panelFocusEntryGeneration = 0
     @State private var panelHasFocus = false
     @State private var panelFocusExitTask: Task<Void, Never>?
     @State private var controlReceiver = TVControlReceiver.shared
@@ -604,9 +603,9 @@ struct TVMainTabView: View {
     // MARK: - Panel control (§5.3 / §5.8)
 
     /// Open (or switch) the anchored panel as a passive preview after dwell.
-    /// Focus intentionally stays on the bar element so left/right navigation
-    /// can continue across library tabs. D-pad-down or profile press uses
-    /// `openPanelAndEnter` to move focus into the rows.
+    /// Focus stays on the bar element, because showing a focusable region
+    /// does not move focus — so left/right navigation continues across tabs
+    /// and D-pad-down enters the panel natively.
     private func handleDwell(_ panel: TVTopMenuPanel?) {
         guard let panel else {
             closePanel()
@@ -619,8 +618,7 @@ struct TVMainTabView: View {
     /// in below the bar but focus stays on the tab/avatar. This is the dwell
     /// (focus-rest) path — opening on a *settled* focus, with no in-flight
     /// move command, is what lets the tab keep its focus ring without a focus
-    /// escape. D-pad-down instead uses `openPanelAndEnter`, which claims a
-    /// panel row so the move has a destination.
+    /// escape.
     private func openPanelPreview(_ panel: TVTopMenuPanel) {
         guard panel != openPanel else { return }
 
@@ -636,53 +634,31 @@ struct TVMainTabView: View {
     /// A deliberate **press** on the avatar (§5.8) opens the profile menu
     /// and moves focus straight into it.
     private func openProfilePanelImmediately() {
-        if openPanel != .profile {
-            openPanelAndEnter(.profile)
-            return
-        }
-        enterOpenPanel()
-    }
-
-    /// Manually refresh panel row focus, used when d-pad-down arrives while
-    /// the matching panel is already open.
-    private func enterOpenPanel() {
-        guard openPanel != nil else { return }
-        panelFocusExitTask?.cancel()
-        panelFocusExitTask = nil
-        panelEntersFocus = true
-        panelHasFocus = true
-        panelFocusEntryGeneration += 1
+        openPanelForEntry(.profile)
     }
 
     /// Route a d-pad-down on a panel-bearing bar element (§5.3): open its
     /// panel if it isn't already, then move focus into it. The bar no longer
     /// toggles the down handler on `openPanel`, so this can't run while the
     /// focused tab is being rebuilt.
+    /// D-pad down on a panel-bearing tab.
+    ///
+    /// Only needed when a dwell hasn't already opened the panel: there is
+    /// nothing below the tab to move into yet, so the press would escape into
+    /// the page content behind. Opening it here gives the next press a
+    /// destination. When the panel is already on screen this does nothing and
+    /// the engine moves focus in by itself — its rows are real focus targets.
     private func enterPanelFor(_ panel: TVTopMenuPanel) {
-        // A d-pad-down is a focus *move* — the engine must send focus
-        // somewhere. So down opens the panel (if a dwell hasn't already) AND
-        // hands focus into a row in one motion: claiming a panel row via
-        // @FocusState gives the move a destination, which stops focus from
-        // escaping down into the page content behind it (which is still Home
-        // — focusing a tab doesn't switch the page). The bar's
-        // `!panelHasFocus` release-guard keeps the tab's focus from emptying
-        // out mid-handoff, so this lands cleanly with no Home flash.
-        if openPanel != panel {
-            openPanelAndEnter(panel)
-            return
-        }
-        enterOpenPanel()
+        guard openPanel != panel else { return }
+        openPanelForEntry(panel)
     }
 
     /// Open an anchored panel and hand focus into it in the same state
     /// transition. This is reserved for explicit entry gestures, not dwell,
     /// so hover-open menus never trap horizontal tab navigation.
-    private func openPanelAndEnter(_ panel: TVTopMenuPanel) {
+    private func openPanelForEntry(_ panel: TVTopMenuPanel) {
         panelFocusExitTask?.cancel()
         panelFocusExitTask = nil
-        panelEntersFocus = true
-        panelHasFocus = true
-        panelFocusEntryGeneration += 1
         withAnimation(reduceMotion ? nil : .easeOut(duration: ContinuumTheme.Skyline.cascadeScrimDuration)) {
             openPanel = panel
         }
