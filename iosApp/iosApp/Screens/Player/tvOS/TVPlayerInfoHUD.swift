@@ -7,7 +7,7 @@ import SwiftUI
 /// visible, matching the "HUD over media" idiom rather than a modal sheet.
 /// Menu dismisses via `onExitCommand` on the host view.
 ///
-/// Focus model (see docs/tvos-focus.md): every interactive row is a real
+/// Focus model: every interactive row is a real
 /// `Button` and movement is owned entirely by the tvOS focus engine —
 /// columns are `.focusSection()`s and the tab bar routes entry to the
 /// active pill with `defaultFocus(priority: .userInitiated)`. `@FocusState`

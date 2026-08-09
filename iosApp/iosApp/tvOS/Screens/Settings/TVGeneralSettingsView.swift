@@ -3,8 +3,8 @@ import SwiftUI
 
 /// Family-synced tvOS interface preferences. Every control is a native focus
 /// target; the menu editor changes data only on Select and never intercepts
-/// directional movement, preserving the stable focus graph described in
-/// `docs/tvos-focus.md`.
+/// directional movement, so the focus engine keeps a stable graph to move
+/// through.
 struct TVGeneralSettingsPane: View {
     @State private var preferences = UICustomizationPreferences.shared
     @State private var navPrefs = TVNavPreferences.shared

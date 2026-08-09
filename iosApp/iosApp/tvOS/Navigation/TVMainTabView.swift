@@ -89,7 +89,7 @@ struct TVMainTabView: View {
     /// True while a route pushed *from the bar* (search, profile/For You
     /// panel items) is on the stack. When the stack pops back to root,
     /// focus returns to the bar — the explicit "next owner" choice
-    /// (docs/tvos-focus.md); leaving it to the engine landed on an
+    ///; leaving it to the engine landed on an
     /// arbitrary row card. Card-pushed routes (detail pages) never set
     /// this, so their pops keep the engine's restore-to-card behavior.
     @State private var barOwnsFocusOnPopToRoot = false

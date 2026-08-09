@@ -1,57 +1,31 @@
-#if !os(tvOS)
-import SwiftUI
+import Foundation
 
-/// "Details" key/value list rendered below the hero. Mirrors
-/// `TVDetailFactsSection` — same data sources (crew, studios, networks,
-/// dates) — but laid out as a phone-friendly inset list with thin
-/// dividers and tight rows.
-struct PhoneDetailFactsSection: View {
-    let detail: ItemDetail
-
-    private let maxCreditNames = 3
-
-    var body: some View {
-        let facts = assembleFacts()
-        if !facts.isEmpty {
-            VStack(spacing: 0) {
-                ForEach(Array(facts.enumerated()), id: \.element.label) { index, fact in
-                    if index > 0 {
-                        Rectangle()
-                            .fill(Color.white.opacity(0.08))
-                            .frame(height: 1)
-                    }
-                    HStack(alignment: .top, spacing: 16) {
-                        Text(fact.label.uppercased())
-                            .font(.system(size: 11, weight: .bold))
-                            .tracking(1.2)
-                            .foregroundColor(.continuumOnSurface.opacity(0.5))
-                            .frame(width: 100, alignment: .leading)
-                        Text(fact.value)
-                            .font(.system(size: 14, weight: .regular))
-                            .foregroundColor(.continuumOnSurface)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .padding(.vertical, 12)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-
-    private struct Fact {
+/// The label/value rows shown in a detail page's facts section — director,
+/// writer, studio, network, country and the air/release dates.
+///
+/// One builder for every platform. The phone lists these as a two-column
+/// grid and Apple TV as a focusable row, but which facts an item has and how
+/// their values read is the same question everywhere.
+enum DetailFacts {
+    struct Fact: Hashable {
         let label: String
         let value: String
     }
 
-    private func assembleFacts() -> [Fact] {
+    /// Credits are capped so a long crew list cannot push the rest of the
+    /// section off screen; the overflow is marked with an ellipsis.
+    static let maxCreditNames = 3
+
+    static func assemble(from detail: ItemDetail) -> [Fact] {
         var facts: [Fact] = []
 
-        if let directors = creditNames(forJobs: ["Director"]), !directors.isEmpty {
+        if let directors = creditNames(in: detail, forJobs: ["Director"]), !directors.isEmpty {
             facts.append(Fact(label: "Director", value: directors))
         }
-        if let writers = creditNames(forJobs: ["Writer", "Screenplay", "Story"]), !writers.isEmpty {
-            facts.append(Fact(label: writerLabel, value: writers))
+        if let writers = creditNames(in: detail, forJobs: ["Writer", "Screenplay", "Story"]), !writers.isEmpty {
+            facts.append(Fact(label: writerLabel(for: detail), value: writers))
         }
+
         if let studios = detail.studios, !studios.isEmpty {
             facts.append(Fact(label: "Studio", value: studios.prefix(3).joined(separator: ", ")))
         }
@@ -76,12 +50,14 @@ struct PhoneDetailFactsSection: View {
         return facts
     }
 
-    private var writerLabel: String {
+    /// "Writer" reads wrong when the credit is specifically a screenplay, so
+    /// the label follows whichever job the crew actually carries.
+    static func writerLabel(for detail: ItemDetail) -> String {
         let hasScreenplay = detail.crew?.contains { $0.job?.lowercased() == "screenplay" } ?? false
         return hasScreenplay ? "Writer" : "Written by"
     }
 
-    private func creditNames(forJobs jobs: [String]) -> String? {
+    static func creditNames(in detail: ItemDetail, forJobs jobs: [String]) -> String? {
         guard let crew = detail.crew else { return nil }
         let lowered = jobs.map { $0.lowercased() }
         let names = crew
@@ -96,4 +72,3 @@ struct PhoneDetailFactsSection: View {
         return trimmed.count > maxCreditNames ? "\(joined), …" : joined
     }
 }
-#endif
