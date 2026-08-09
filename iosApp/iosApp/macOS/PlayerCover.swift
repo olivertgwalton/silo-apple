@@ -71,9 +71,17 @@ private struct PlayerCoverModifier: ViewModifier {
 final class MacPlayerChrome {
     private(set) var isFullScreen = false
 
+    deinit {
+        let center = NotificationCenter.default
+        for observer in fullScreenObservers {
+            center.removeObserver(observer)
+        }
+    }
+
     @ObservationIgnored private weak var window: NSWindow?
     @ObservationIgnored private var restoreState: RestoreState?
     @ObservationIgnored private var isCoverActive = false
+    @ObservationIgnored private var fullScreenObservers: [NSObjectProtocol] = []
 
     /// The window chrome as it was before the player took over, so browsing
     /// gets its title bar back exactly as it left it.
@@ -87,6 +95,7 @@ final class MacPlayerChrome {
     func attach(to window: NSWindow?) {
         guard let window, window !== self.window else { return }
         self.window = window
+        observeFullScreen(of: window)
         refreshFullScreenState()
         // A cover that went up before the window was reachable (deep-link
         // straight into playback) still needs its chrome applied.
@@ -112,10 +121,23 @@ final class MacPlayerChrome {
         return true
     }
 
-    /// Re-reads fullscreen state from the window. Driven by the view's
-    /// `onReceive` of AppKit's enter/exit notifications.
-    func refreshFullScreenState() {
+    private func refreshFullScreenState() {
         isFullScreen = window?.styleMask.contains(.fullScreen) ?? false
+    }
+
+    private func observeFullScreen(of window: NSWindow) {
+        let center = NotificationCenter.default
+        for observer in fullScreenObservers {
+            center.removeObserver(observer)
+        }
+        fullScreenObservers = [
+            NSWindow.didEnterFullScreenNotification,
+            NSWindow.didExitFullScreenNotification
+        ].map { name in
+            center.addObserver(forName: name, object: window, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.refreshFullScreenState() }
+            }
+        }
     }
 
     /// Strips the window down to bare picture while the player is up, and puts
@@ -130,19 +152,12 @@ final class MacPlayerChrome {
         }
     }
 
-    /// Follows the transport controls: when they fade out the traffic lights
-    /// go with them and the pointer hides until the mouse moves again, so a
-    /// playing movie is nothing but picture.
+    /// Follows the transport controls: the traffic lights fade out with them.
+    /// The pointer is handled in the view via `.pointerVisibility`.
     func setChromeVisible(_ visible: Bool) {
         guard let window else { return }
         for type in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
             window.standardWindowButton(type)?.animator().alphaValue = visible ? 1 : 0
-        }
-        if !visible {
-            // Self-restoring: AppKit brings the pointer back on the next mouse
-            // move, so this never needs a balancing `unhide()` (which would
-            // corrupt the global hide count if it ever got out of step).
-            NSCursor.setHiddenUntilMouseMoves(true)
         }
     }
 

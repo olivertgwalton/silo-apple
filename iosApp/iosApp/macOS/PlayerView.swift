@@ -1,5 +1,4 @@
 #if os(macOS)
-import AppKit
 import SwiftUI
 
 struct PlayerView: View {
@@ -35,6 +34,7 @@ struct PlayerView: View {
     @State private var isOptionsPresented = false
     @State private var selectedOptionsTab: MacPlayerOptionsPanel.Tab = .audio
     @State private var lastHoverLocation: CGPoint?
+    @FocusState private var isKeyboardFocused: Bool
     @State private var didNotifyPlaybackStarted = false
 
     init(
@@ -78,7 +78,8 @@ struct PlayerView: View {
             if let error = viewModel.error {
                 errorView(error)
             } else {
-                playerSurface
+                PlayerVideoSurface(viewModel: viewModel)
+                    .ignoresSafeArea()
 
                 // Sits above the video surface (an AppKit view, which would
                 // otherwise win the hit test) and below the controls, so
@@ -124,11 +125,6 @@ struct PlayerView: View {
                     PlayerNoticeOverlay(notice: notice)
                         .padding(.top, 72)
                 }
-
-                MacPlayerCommandCapture { command in
-                    handleCommand(command)
-                }
-                .frame(width: 0, height: 0)
             }
         }
         // `onHover` alone only fires crossing the boundary, so once the
@@ -147,6 +143,13 @@ struct PlayerView: View {
         .onChange(of: shouldShowControls, initial: true) { _, visible in
             windowChrome?.setChromeVisible(visible)
         }
+        // Hide the pointer along with the transport, so a playing movie is
+        // nothing but picture.
+        .pointerVisibility(shouldShowControls ? .visible : .hidden)
+        .focusable()
+        .focusEffectDisabled()
+        .focused($isKeyboardFocused)
+        .onKeyPress(phases: .down) { press in handleKeyPress(press) }
         .onChange(of: scenePhase) { _, newPhase in
             viewModel.handleScenePhase(newPhase)
         }
@@ -164,13 +167,8 @@ struct PlayerView: View {
             guard newValue != nil else { return }
             close()
         }
-        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didEnterFullScreenNotification)) { _ in
-            windowChrome?.refreshFullScreenState()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didExitFullScreenNotification)) { _ in
-            windowChrome?.refreshFullScreenState()
-        }
         .onAppear {
+            isKeyboardFocused = true
             viewModel.applyArtworkURLHints(
                 posterURL: posterURLHint,
                 backdropURL: backdropURLHint
@@ -201,62 +199,69 @@ struct PlayerView: View {
             || isOptionsPresented
     }
 
-    @ViewBuilder
-    private var playerSurface: some View {
-        switch viewModel.activePlayer {
-        case .none:
-            Color.black.ignoresSafeArea()
-        case .avPlayer(let backend):
-            AVPlayerSurface(backend: backend)
-                .ignoresSafeArea()
-        case .coreMedia(let core):
-            PlayerSurface(player: core)
-                .ignoresSafeArea()
-        }
-    }
+    /// Transport keyboard shortcuts, matching the conventions Mac video
+    /// players share. Returning `.ignored` lets anything unrecognised carry on
+    /// to the responder chain — menu shortcuts still work.
+    private func handleKeyPress(_ press: KeyPress) -> KeyPress.Result {
+        let modifiers = press.modifiers.intersection([.command, .control, .shift, .option])
 
-    private func handleCommand(_ command: MacPlayerCommand) {
-        switch command {
-        case .playPause:
+        switch press.key {
+        case .space:
             viewModel.togglePlayPause()
-        case .skipBackward:
-            viewModel.skipBackward(15)
-        case .skipForward:
-            viewModel.skipForward(15)
-        case .previousChapter:
-            viewModel.seekToAdjacentChapter(forward: false)
-        case .nextChapter:
-            viewModel.seekToAdjacentChapter(forward: true)
-        case .cycleAudio:
-            viewModel.cycleAudioTrack()
-        case .cycleSubtitle:
-            viewModel.cycleSubtitleTrack()
-        case .toggleSubtitle:
-            viewModel.toggleSubtitles()
-        case .options:
-            selectedOptionsTab = .audio
-            isOptionsPresented.toggle()
-            viewModel.revealControls()
+        case .leftArrow:
+            modifiers.contains(.command)
+                ? viewModel.seekToAdjacentChapter(forward: false)
+                : viewModel.skipBackward(15)
+        case .rightArrow:
+            modifiers.contains(.command)
+                ? viewModel.seekToAdjacentChapter(forward: true)
+                : viewModel.skipForward(15)
         case .escape:
             // Unwind one layer at a time, the way Mac apps do: close the
             // options popover, then leave fullscreen, and only close the
-            // window once there is nothing left to back out of.
+            // player once there is nothing left to back out of.
             if isOptionsPresented {
                 isOptionsPresented = false
-            } else if windowChrome?.exitFullScreenIfNeeded() == true {
-                break
-            } else {
+            } else if windowChrome?.exitFullScreenIfNeeded() != true {
                 close()
             }
-        case .toggleFullScreen:
-            windowChrome?.toggleFullScreen()
-        case .speedDown:
-            viewModel.setPlaybackSpeed(nextSpeed(offset: -1))
-        case .speedUp:
-            viewModel.setPlaybackSpeed(nextSpeed(offset: 1))
-        case .normalSpeed:
-            viewModel.setPlaybackSpeed(1.0)
+        default:
+            return handleCharacterPress(press.characters, modifiers: modifiers)
         }
+        return .handled
+    }
+
+    private func handleCharacterPress(
+        _ characters: String,
+        modifiers: EventModifiers
+    ) -> KeyPress.Result {
+        let isControlCommand = modifiers.contains(.control) && modifiers.contains(.command)
+
+        switch characters.lowercased() {
+        // ⌃⌘F is the system fullscreen shortcut; bare F is the convention
+        // every Mac video player also honors.
+        case "f" where isControlCommand || modifiers.isEmpty:
+            windowChrome?.toggleFullScreen()
+        case "a" where isControlCommand:
+            viewModel.cycleAudioTrack()
+        case "s" where isControlCommand:
+            viewModel.cycleSubtitleTrack()
+        case "g" where isControlCommand:
+            viewModel.toggleSubtitles()
+        case "s" where modifiers.contains(.command):
+            selectedOptionsTab = .audio
+            isOptionsPresented.toggle()
+            viewModel.revealControls()
+        case "[" where modifiers.contains(.shift) && modifiers.contains(.command):
+            viewModel.setPlaybackSpeed(1.0)
+        case "[" where modifiers.contains(.shift):
+            viewModel.setPlaybackSpeed(nextSpeed(offset: -1))
+        case "]" where modifiers.contains(.shift):
+            viewModel.setPlaybackSpeed(nextSpeed(offset: 1))
+        default:
+            return .ignored
+        }
+        return .handled
     }
 
     private func nextSpeed(offset: Int) -> Double {
