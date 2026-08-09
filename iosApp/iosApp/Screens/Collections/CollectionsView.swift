@@ -226,10 +226,8 @@ struct CollectionsView: View {
             }
             .continuumNavigationBarSurfaceBackground()
         }
-        #if !os(macOS)
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
-        #endif
         .presentationSizing(.form)
     }
 }
@@ -261,10 +259,8 @@ private struct GroupActionSheet: View {
                 }
                 .continuumNavigationBarSurfaceBackground()
         }
-        #if !os(macOS)
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
-        #endif
         .presentationSizing(.form)
         .onAppear {
             switch action {

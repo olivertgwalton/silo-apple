@@ -285,10 +285,8 @@ private struct PhonePlaybackSelectorSheet: View {
                 #endif
             }
         }
-        #if !os(macOS)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
-        #endif
         .presentationSizing(.form)
     }
 

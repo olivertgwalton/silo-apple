@@ -43,10 +43,8 @@ struct FilterView: View {
             }
             .continuumNavigationBarSurfaceBackground()
         }
-        #if !os(macOS)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
-        #endif
         .presentationSizing(.form)
         .task { await viewModel.loadFacetsIfNeeded() }
         .onDisappear { commitIfChanged() }
