@@ -49,6 +49,8 @@ struct OfflineSeriesBrowseView: View {
                     } label: {
                         Image(systemName: "ellipsis.circle")
                     }
+                    .menuStyle(.borderlessButton)
+                    .menuIndicator(.hidden)
                 }
             }
         }

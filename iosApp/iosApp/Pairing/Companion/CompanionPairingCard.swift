@@ -266,7 +266,11 @@ struct CompanionPairingCard: View {
 
     private func tertiaryButton(_ title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(title).font(.continuumBody).frame(maxWidth: .infinity).padding(.vertical, 8)
+            Text(title)
+                .font(.continuumBody)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .foregroundStyle(accent)
