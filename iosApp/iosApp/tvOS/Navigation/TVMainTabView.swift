@@ -541,8 +541,7 @@ struct TVMainTabView: View {
             onCommitLibrary: { commitScope(type: type, library: $0, pill: nil) },
             onCommitSection: { commitScope(type: type, library: $0, pill: $1) },
             onClose: { closePanel() },
-            onPanelFocusChanged: { handlePanelFocusChanged($0) },
-            onExitToContent: { exitPanelToContent() }
+            onPanelFocusChanged: { handlePanelFocusChanged($0) }
         )
     }
 
@@ -561,8 +560,7 @@ struct TVMainTabView: View {
                 onCommitLibrary: { commitShortcut(root: root, library: $0, pill: nil) },
                 onCommitSection: { commitShortcut(root: root, library: $0, pill: $1) },
                 onClose: { closePanel() },
-                onPanelFocusChanged: { handlePanelFocusChanged($0) },
-                onExitToContent: { exitPanelToContent() }
+                onPanelFocusChanged: { handlePanelFocusChanged($0) }
             )
         }
     }
