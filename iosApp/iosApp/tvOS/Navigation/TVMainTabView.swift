@@ -538,8 +538,6 @@ struct TVMainTabView: View {
             type: type,
             libraries: libraries(of: type),
             currentScopeId: activeLibrary(for: type)?.id,
-            entersPanel: isActive && panelEntersFocus,
-            focusEntryGeneration: panelFocusEntryGeneration,
             onCommitLibrary: { commitScope(type: type, library: $0, pill: nil) },
             onCommitSection: { commitScope(type: type, library: $0, pill: $1) },
             onClose: { closePanel() },
@@ -560,8 +558,6 @@ struct TVMainTabView: View {
                 type: type,
                 libraries: [library],
                 currentScopeId: library.id,
-                entersPanel: isActive && panelEntersFocus,
-                focusEntryGeneration: panelFocusEntryGeneration,
                 onCommitLibrary: { commitShortcut(root: root, library: $0, pill: nil) },
                 onCommitSection: { commitShortcut(root: root, library: $0, pill: $1) },
                 onClose: { closePanel() },
@@ -573,8 +569,6 @@ struct TVMainTabView: View {
 
     private func forYouPanel(isActive: Bool) -> some View {
         TVForYouDropdown(
-            entersPanel: isActive && panelEntersFocus,
-            focusEntryGeneration: panelFocusEntryGeneration,
             onPanelFocusChanged: { handlePanelFocusChanged($0) },
             onClose: { closePanel() },
             onExitToContent: { exitPanelToContent() },
@@ -589,8 +583,6 @@ struct TVMainTabView: View {
             profileName: currentProfile?.name ?? "Profile",
             avatar: currentProfile?.avatarEmoji,
             serverHost: ServerRegistry.shared.activeServer?.displayName,
-            entersPanel: isActive && panelEntersFocus,
-            focusEntryGeneration: panelFocusEntryGeneration,
             onPanelFocusChanged: { handlePanelFocusChanged($0) },
             onSwitchProfile: { closePanel(then: switchProfile) },
             onWatchlist: { closePanel(then: { navigateFromBar(.watchlist) }) },

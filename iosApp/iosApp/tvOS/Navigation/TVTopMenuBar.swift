@@ -922,8 +922,6 @@ private enum TVForYouAction: Hashable {
 /// tab, matching the top-bar dwell/down focus contract used by library
 /// cascades.
 struct TVForYouDropdown: View {
-    let entersPanel: Bool
-    let focusEntryGeneration: Int
     let onPanelFocusChanged: (Bool) -> Void
     let onClose: () -> Void
     let onExitToContent: () -> Void
@@ -932,30 +930,15 @@ struct TVForYouDropdown: View {
     let onRecommendations: () -> Void
 
     @FocusState private var focusedAction: TVForYouAction?
-    @State private var lastAppliedEntryGeneration = 0
 
     var body: some View {
         panel
-            .onChange(of: focusEntryGeneration) { _, generation in
-                applyEntryGeneration(generation)
-            }
+            // The rows are real buttons the whole time the panel is on
+            // screen, so D-pad down moves into them natively and their focus
+            // state is the only report of whether the panel is entered.
             .onChange(of: focusedAction) { _, newValue in
                 onPanelFocusChanged(newValue != nil)
             }
-            .onChange(of: entersPanel) { _, entered in
-                if !entered { focusedAction = nil }
-            }
-            .onAppear {
-                if entersPanel { applyEntryGeneration(focusEntryGeneration) }
-            }
-    }
-
-    private func applyEntryGeneration(_ generation: Int) {
-        guard entersPanel,
-              generation > 0,
-              generation != lastAppliedEntryGeneration else { return }
-        lastAppliedEntryGeneration = generation
-        focusedAction = .watchlist
     }
 
     private var panel: some View {
@@ -1030,18 +1013,11 @@ struct TVForYouDropdown: View {
             Spacer(minLength: 0)
         }
 
-        if entersPanel {
-            Button(action: action) {
-                label
-            }
-            .buttonStyle(TVProfileMenuButtonStyle(isDestructive: false))
-            .focused($focusedAction, equals: id)
-        } else {
+        Button(action: action) {
             label
-                .foregroundStyle(.white.opacity(0.86))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
         }
+        .buttonStyle(TVProfileMenuButtonStyle(isDestructive: false))
+        .focused($focusedAction, equals: id)
     }
 }
 
@@ -1084,7 +1060,7 @@ private enum TVProfileAction: Hashable {
 /// Anchored profile dropdown panel (§5.8): the same `glass.strong` level-1
 /// panel as the cascade, hosted by the shell under the avatar. The shell
 /// owns the scrim and Menu-to-close; this view owns only its rows and the
-/// focus hand-off when the host bumps `focusEntryGeneration`.
+/// entry: the rows are real buttons, so the engine moves focus in itself.
 struct TVProfileDropdown: View {
     let profileName: String
     let avatar: String?
@@ -1092,9 +1068,7 @@ struct TVProfileDropdown: View {
     /// the §5.8 mono header style.
     let serverHost: String?
     /// Whether focus has entered the panel.
-    let entersPanel: Bool
     /// Bumped by the host when focus should enter — lands on the first row.
-    let focusEntryGeneration: Int
     /// Reports whether any row currently holds focus, so the host can drop
     /// the avatar's focus ring once focus descends (§5.8).
     let onPanelFocusChanged: (Bool) -> Void
@@ -1108,7 +1082,6 @@ struct TVProfileDropdown: View {
     let onSignOut: () -> Void
 
     @FocusState private var focusedAction: TVProfileAction?
-    @State private var lastAppliedEntryGeneration = 0
 
     /// Capability-gated: the Requests row only exists (and only takes a
     /// focus slot) when the server reports `requests_enabled`.
@@ -1118,28 +1091,12 @@ struct TVProfileDropdown: View {
 
     var body: some View {
         panel
-            // Dwell previews render passive labels; rows become focusable
-            // only after the host explicitly hands focus into the panel.
-            .onChange(of: focusEntryGeneration) { _, generation in
-                applyEntryGeneration(generation)
-            }
+            // Rows are real buttons whenever the panel is on screen, so the
+            // engine owns entry and `focusedAction` is the single report of
+            // whether focus is inside.
             .onChange(of: focusedAction) { _, newValue in
                 onPanelFocusChanged(newValue != nil)
             }
-            .onChange(of: entersPanel) { _, entered in
-                if !entered { focusedAction = nil }
-            }
-            .onAppear {
-                if entersPanel { applyEntryGeneration(focusEntryGeneration) }
-            }
-    }
-
-    private func applyEntryGeneration(_ generation: Int) {
-        guard entersPanel,
-              generation > 0,
-              generation != lastAppliedEntryGeneration else { return }
-        lastAppliedEntryGeneration = generation
-        focusedAction = .switchProfile
     }
 
     private var panel: some View {
@@ -1237,18 +1194,11 @@ struct TVProfileDropdown: View {
             Spacer(minLength: 0)
         }
 
-        if entersPanel {
-            Button(action: action) {
-                label
-            }
-            .buttonStyle(TVProfileMenuButtonStyle(isDestructive: isDestructive))
-            .focused($focusedAction, equals: id)
-        } else {
+        Button(action: action) {
             label
-                .foregroundStyle(isDestructive ? .red.opacity(0.9) : .white.opacity(0.86))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
         }
+        .buttonStyle(TVProfileMenuButtonStyle(isDestructive: isDestructive))
+        .focused($focusedAction, equals: id)
     }
 }
 

@@ -18,10 +18,12 @@ import SwiftUI
 ///   and never steals focus. Its first section row aligns with the highlighted
 ///   library row so the two-column selector reads as one continuous menu.
 ///
-/// Focus contract (the hard part — see §5.3/§7):
-/// - The host (`TVMainTabView`) keeps focus on the *tab* while dwell only
-///   previews the panel. D-pad **down** flips `entersPanel` true and bumps
-///   `focusEntryGeneration`, landing on the current-scope library row.
+/// Focus contract:
+/// - The panel is focusable the whole time it is on screen. Rendering a
+///   focusable region does not move focus, so dwell can preview the panel
+///   while the bar keeps focus, and D-pad **down** moves into it natively —
+///   no entry flag, no generation counter, no hand-claimed focus. The row
+///   highlight seeds itself when focus actually arrives.
 /// - **Up/down** rolls libraries; the flyout follows. **Right** enters the
 ///   flyout (first section); **left** returns to the library row.
 /// - **Press** on a library row commits that scope → Browse landing.
@@ -37,11 +39,6 @@ struct TVCascadeSelector: View {
     /// The library currently scoped for this tab (gets the `✓`, and the
     /// row focus lands here on entry).
     let currentScopeId: Int?
-    /// Whether focus has entered the panel.
-    let entersPanel: Bool
-    /// Bumped by the host the moment focus should enter the panel — lands
-    /// on the current-scope library row.
-    let focusEntryGeneration: Int
     /// Commit a library scope → its Browse landing.
     let onCommitLibrary: (Library) -> Void
     /// Commit a library scope + land on a specific section (pill).
@@ -69,7 +66,6 @@ struct TVCascadeSelector: View {
     @State private var flyoutAnchorId: Int?
     /// Debounce task for the flyout follow (§5.3).
     @State private var flyoutFollowTask: Task<Void, Never>?
-    @State private var lastAppliedEntryGeneration = 0
     /// Each library row's vertical center in the level-1 HStack's coordinate
     /// space. The flyout offsets to align its first section with the anchored
     /// row, so the composite highlight does not visually jump on Right.
@@ -104,24 +100,14 @@ struct TVCascadeSelector: View {
         // The cascade is a composite tvOS control. Rows are rendered labels in
         // both preview and entered modes; only the panel container itself is
         // focusable, and D-pad movement updates the internal highlighted row.
-        .onChange(of: focusEntryGeneration) { _, generation in
-            applyEntryGeneration(generation)
-        }
         .onChange(of: focus) { _, newValue in handleFocusChange(newValue) }
         .onChange(of: panelFocused) { _, isFocused in handlePanelFocusedChange(isFocused) }
-        .onChange(of: entersPanel) { _, entered in
-            if !entered {
-                panelFocused = false
-                focus = nil
-            }
-        }
         .onAppear {
             flyoutAnchorId = currentScopeId ?? libraries.first?.id
-            if entersPanel { applyEntryGeneration(focusEntryGeneration) }
         }
         .onDisappear { flyoutFollowTask?.cancel() }
         .contentShape(Rectangle())
-        .focusable(entersPanel)
+        .focusable()
         .focused($panelFocused)
         .onTapGesture(perform: commitFocusedSelection)
         .onMoveCommand(perform: handleMoveCommand)
@@ -395,28 +381,26 @@ struct TVCascadeSelector: View {
 
     // MARK: - Focus plumbing
 
-    private func applyEntryGeneration(_ generation: Int) {
-        guard entersPanel,
-              generation > 0,
-              generation != lastAppliedEntryGeneration else { return }
-        lastAppliedEntryGeneration = generation
+    /// Seed the highlighted row the moment the engine hands focus in, and
+    /// clear it when focus leaves. `panelFocused` is the single source of
+    /// truth for "is the panel entered" — the host reads it through
+    /// `onPanelFocusChanged` rather than keeping its own copy.
+    private func seedFocusOnEntry() {
         if isSingleLibrary, let library = libraries.first {
             // Single-level: land on the first section (§5.3).
             focus = .section(library.id, pills.first ?? .recommended)
-            claimPanelFocus()
         } else {
             // Two-level: land on the current-scope row, else the first.
             let target = currentScopeId ?? libraries.first?.id
             if let target {
                 focus = .library(target)
                 flyoutAnchorId = target
-                claimPanelFocus()
             }
         }
     }
 
     private func handleFocusChange(_ newValue: Focus?) {
-        if newValue != nil, entersPanel {
+        if newValue != nil, panelFocused {
             onPanelFocusChanged(true)
         }
         guard let newValue else { return }
@@ -432,7 +416,12 @@ struct TVCascadeSelector: View {
     }
 
     private func handlePanelFocusedChange(_ isFocused: Bool) {
-        onPanelFocusChanged(isFocused && focus != nil)
+        if isFocused {
+            if focus == nil { seedFocusOnEntry() }
+        } else {
+            focus = nil
+        }
+        onPanelFocusChanged(isFocused)
     }
 
     /// Move the flyout to a newly focused library row after a rest
@@ -473,7 +462,7 @@ struct TVCascadeSelector: View {
     }
 
     private func handleMoveCommand(_ direction: MoveCommandDirection) {
-        guard entersPanel, panelFocused, let focus else { return }
+        guard panelFocused, let focus else { return }
 
         switch (focus, direction) {
         case (.library(let libraryId), .up):
@@ -524,21 +513,17 @@ struct TVCascadeSelector: View {
     private func moveToLibrary(_ libraryId: Int) {
         flyoutFollowTask?.cancel()
         flyoutAnchorId = libraryId
-        onPanelFocusChanged(true)
         focus = .library(libraryId)
-        claimPanelFocus()
     }
 
     private func moveToSection(libraryId: Int, pill: TVLibraryPill) {
         flyoutFollowTask?.cancel()
         flyoutAnchorId = libraryId
-        onPanelFocusChanged(true)
         focus = .section(libraryId, pill)
-        claimPanelFocus()
     }
 
     private func commitFocusedSelection() {
-        guard entersPanel, let focus else { return }
+        guard panelFocused, let focus else { return }
         switch focus {
         case .library(let libraryId):
             if let library = libraries.first(where: { $0.id == libraryId }) {
@@ -551,15 +536,6 @@ struct TVCascadeSelector: View {
         }
     }
 
-    private func claimPanelFocus() {
-        onPanelFocusChanged(true)
-        panelFocused = true
-        Task { @MainActor in
-            await Task.yield()
-            guard entersPanel, focus != nil else { return }
-            panelFocused = true
-        }
-    }
 }
 
 // MARK: - Row labels
