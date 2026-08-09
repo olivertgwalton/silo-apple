@@ -35,6 +35,7 @@ enum MacPlayerCommand {
     case toggleSubtitle
     case options
     case escape
+    case toggleFullScreen
     case speedDown
     case speedUp
     case normalSpeed
@@ -78,6 +79,12 @@ final class CommandCaptureView: NSView {
 
         let character = event.charactersIgnoringModifiers?.lowercased()
         switch character {
+        // ⌃⌘F is the system fullscreen shortcut; bare F is the convention
+        // every Mac video player also honors.
+        case "f" where modifiers.contains(.control) && modifiers.contains(.command):
+            return .toggleFullScreen
+        case "f" where modifiers.isEmpty:
+            return .toggleFullScreen
         case "a" where modifiers.contains(.control) && modifiers.contains(.command):
             return .cycleAudio
         case "s" where modifiers.contains(.control) && modifiers.contains(.command):

@@ -175,22 +175,10 @@ struct TVMainTabView: View {
         )) {
             AudioFullPlayerView()
         }
-        .fullScreenCover(item: $router.presentedPlayer) { payload in
-            PlayerView(
-                contentId: payload.contentId,
-                preferredFileId: payload.fileId,
-                preferredAudioTrackIndex: payload.audioTrackIndex,
-                preferredSubtitleTrackIndex: payload.subtitleTrackIndex,
-                startFromBeginning: payload.startFromBeginning,
-                resumePositionOverride: payload.resumePosition,
-                posterURLHint: payload.posterURL,
-                backdropURLHint: payload.backdropURL,
-                onPlaybackStarted: {
-                    guard let returnToContentId = payload.returnToContentId,
-                          router.presentedPlayer?.id == payload.id else { return }
-                    router.replaceCurrent(with: .itemDetail(contentId: returnToContentId))
-                }
-            )
+        .playerCover(presentation: $router.presentedPlayer) { payload in
+            guard let returnToContentId = payload.returnToContentId,
+                  router.presentedPlayer?.id == payload.id else { return }
+            router.replaceCurrent(with: .itemDetail(contentId: returnToContentId))
         }
         .confirmationDialog(
             "Switch Server",

@@ -1,4 +1,5 @@
 #if os(macOS)
+import AppKit
 import SwiftUI
 
 struct PlayerView: View {
@@ -13,12 +14,28 @@ struct PlayerView: View {
     /// + local media file, no server session) so playback works with no
     /// network.
     let offlineDownloadId: String?
+    /// Poster/backdrop URLs the presenting screen already had loaded, so the
+    /// now-playing widget skips a catalog fetch it doesn't need.
+    let posterURLHint: String?
+    let backdropURLHint: String?
+    /// Supplied when the player is presented as a full-window cover, which
+    /// owns the presentation state and cannot be torn down by `dismiss()`.
+    /// Nil falls back to the environment dismissal (the debug sheet).
+    let onClose: (() -> Void)?
+    /// Fired once playback actually begins, so a presenter can install the
+    /// destination it wants behind the player. Matches the shared signature.
+    let onPlaybackStarted: (() -> Void)?
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    /// Present when the player is covering the browsing window, absent when
+    /// it is hosted some other way (e.g. the debug launch-argument sheet).
+    @Environment(MacPlayerChrome.self) private var windowChrome: MacPlayerChrome?
     @State private var viewModel = PlayerViewModel()
     @State private var isOptionsPresented = false
     @State private var selectedOptionsTab: MacPlayerOptionsPanel.Tab = .audio
+    @State private var lastHoverLocation: CGPoint?
+    @State private var didNotifyPlaybackStarted = false
 
     init(
         contentId: String,
@@ -27,7 +44,11 @@ struct PlayerView: View {
         preferredSubtitleTrackIndex: Int? = nil,
         startFromBeginning: Bool = false,
         resumePositionOverride: Double? = nil,
-        offlineDownloadId: String? = nil
+        offlineDownloadId: String? = nil,
+        posterURLHint: String? = nil,
+        backdropURLHint: String? = nil,
+        onClose: (() -> Void)? = nil,
+        onPlaybackStarted: (() -> Void)? = nil
     ) {
         self.contentId = contentId
         self.preferredFileId = preferredFileId
@@ -36,6 +57,18 @@ struct PlayerView: View {
         self.startFromBeginning = startFromBeginning
         self.resumePositionOverride = resumePositionOverride
         self.offlineDownloadId = offlineDownloadId
+        self.posterURLHint = posterURLHint
+        self.backdropURLHint = backdropURLHint
+        self.onClose = onClose
+        self.onPlaybackStarted = onPlaybackStarted
+    }
+
+    private func close() {
+        if let onClose {
+            onClose()
+        } else {
+            dismiss()
+        }
     }
 
     var body: some View {
@@ -46,6 +79,16 @@ struct PlayerView: View {
                 errorView(error)
             } else {
                 playerSurface
+
+                // Sits above the video surface (an AppKit view, which would
+                // otherwise win the hit test) and below the controls, so
+                // double-click-to-fullscreen works on the picture without
+                // stealing clicks from the transport buttons.
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture(count: 2) {
+                        windowChrome?.toggleFullScreen()
+                    }
 
                 if viewModel.isLoading, viewModel.avPlayerBackend == nil {
                     ProgressView()
@@ -58,7 +101,9 @@ struct PlayerView: View {
                         viewModel: viewModel,
                         isOptionsPresented: $isOptionsPresented,
                         selectedOptionsTab: $selectedOptionsTab,
-                        onDismiss: { dismiss() }
+                        isFullScreen: windowChrome?.isFullScreen ?? false,
+                        onToggleFullScreen: { windowChrome?.toggleFullScreen() },
+                        onDismiss: { close() }
                     )
                     .transition(.opacity)
                 }
@@ -86,10 +131,21 @@ struct PlayerView: View {
                 .frame(width: 0, height: 0)
             }
         }
-        .onHover { hovering in
-            if hovering {
-                viewModel.revealControls()
-            }
+        // `onHover` alone only fires crossing the boundary, so once the
+        // controls auto-hid with the pointer already inside, nothing brought
+        // them back. Continuous hover reports every move; the view model
+        // extends its auto-hide deadline rather than respawning a task, so
+        // calling it at pointer-sample rate is cheap.
+        .onContinuousHover { phase in
+            guard case .active(let location) = phase, location != lastHoverLocation else { return }
+            lastHoverLocation = location
+            viewModel.revealControls()
+        }
+        // Hiding the toolbar is the SwiftUI half of clearing the title bar;
+        // `MacPlayerChrome` handles the height it still reserves.
+        .toolbarVisibility(.hidden, for: .windowToolbar)
+        .onChange(of: shouldShowControls, initial: true) { _, visible in
+            windowChrome?.setChromeVisible(visible)
         }
         .onChange(of: scenePhase) { _, newPhase in
             viewModel.handleScenePhase(newPhase)
@@ -99,11 +155,26 @@ struct PlayerView: View {
                 isOptionsPresented = false
             }
         }
+        .onChange(of: viewModel.isPlaying) { _, isPlaying in
+            guard isPlaying, !didNotifyPlaybackStarted else { return }
+            didNotifyPlaybackStarted = true
+            onPlaybackStarted?()
+        }
         .onChange(of: viewModel.remoteDismissToken) { _, newValue in
             guard newValue != nil else { return }
-            dismiss()
+            close()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didEnterFullScreenNotification)) { _ in
+            windowChrome?.refreshFullScreenState()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didExitFullScreenNotification)) { _ in
+            windowChrome?.refreshFullScreenState()
         }
         .onAppear {
+            viewModel.applyArtworkURLHints(
+                posterURL: posterURLHint,
+                backdropURL: backdropURLHint
+            )
             viewModel.loadAndPlay(
                 contentId: contentId,
                 preferredFileId: preferredFileId,
@@ -167,11 +238,18 @@ struct PlayerView: View {
             isOptionsPresented.toggle()
             viewModel.revealControls()
         case .escape:
+            // Unwind one layer at a time, the way Mac apps do: close the
+            // options popover, then leave fullscreen, and only close the
+            // window once there is nothing left to back out of.
             if isOptionsPresented {
                 isOptionsPresented = false
+            } else if windowChrome?.exitFullScreenIfNeeded() == true {
+                break
             } else {
-                dismiss()
+                close()
             }
+        case .toggleFullScreen:
+            windowChrome?.toggleFullScreen()
         case .speedDown:
             viewModel.setPlaybackSpeed(nextSpeed(offset: -1))
         case .speedUp:
@@ -210,7 +288,7 @@ struct PlayerView: View {
                 .buttonStyle(.borderedProminent)
 
                 Button("Close") {
-                    dismiss()
+                    close()
                 }
                 .keyboardShortcut(.cancelAction)
             }
