@@ -193,7 +193,7 @@ struct TVCascadeSelector: View {
         )
 
         Button { onCommitLibrary(library) } label: { label }
-            .buttonStyle(.plain)
+            .buttonStyle(.continuumFlat)
             .focused($focusedRow, equals: .library(library.id))
             .id(Focus.library(library.id))
             .accessibilityLabel(accessibilityLabel(for: library, isCurrent: isCurrent))
@@ -270,7 +270,7 @@ struct TVCascadeSelector: View {
         )
 
         Button { onCommitSection(library, pill) } label: { label }
-            .buttonStyle(.plain)
+            .buttonStyle(.continuumFlat)
             .focused($focusedRow, equals: .section(library.id, pill))
             .accessibilityLabel("\(pill.title), section")
     }
