@@ -7582,16 +7582,48 @@ class PlayerViewModel {
 
     /// Duration the transport overlay stays on-screen after the last user
     /// interaction before auto-hiding while playing. Matches Infuse/Apple TV.
-    private static let autoHideSeconds: UInt64 = 5
+    private static let autoHideSeconds: TimeInterval = 5
 
+    /// When the transport overlay is next allowed to hide. Pushing this back
+    /// is how an already-running auto-hide task is extended.
+    private var controlsHideDeadline = Date.distantPast
+    /// Set while a spawned auto-hide task is still alive. Paired with the
+    /// task's own `isCancelled` in `hasLiveHideControlsTask`, since callers
+    /// throughout this type pin the overlay by cancelling the task without
+    /// clearing the property.
+    private var isHideControlsTaskRunning = false
+
+    private var hasLiveHideControlsTask: Bool {
+        guard isHideControlsTaskRunning, let task = hideControlsTask else { return false }
+        return !task.isCancelled
+    }
+
+    /// Keeps the transport overlay up and pushes its auto-hide deadline back.
+    ///
+    /// Callable at pointer-sample rate: repeat calls only move the deadline,
+    /// where tearing down and respawning the hide task on each one would churn
+    /// tasks at ~120 Hz while the mouse moves across a macOS player.
     private func scheduleHideControls() {
-        hideControlsTask?.cancel()
-        showControls = true
+        if !showControls {
+            showControls = true
+        }
         guard !isBackgroundSuspended else { return }
+        controlsHideDeadline = Date().addingTimeInterval(Self.autoHideSeconds)
+        guard !hasLiveHideControlsTask else { return }
+
+        isHideControlsTaskRunning = true
         hideControlsTask = Task { @MainActor [weak self] in
+            defer { self?.isHideControlsTaskRunning = false }
             while true {
-                try? await Task.sleep(nanoseconds: Self.autoHideSeconds * 1_000_000_000)
-                guard !Task.isCancelled else { return }
+                guard let self, !Task.isCancelled else { return }
+                let remaining = self.controlsHideDeadline.timeIntervalSinceNow
+                if remaining > 0 {
+                    try? await Task.sleep(for: .seconds(remaining))
+                    guard !Task.isCancelled else { return }
+                    // Re-check rather than hide: the deadline may have moved
+                    // again while this sleep was in flight.
+                    continue
+                }
                 #if os(iOS)
                 // A native Menu offers no isPresented hook, so the hide
                 // deadline checks for a live menu platter instead of the
@@ -7599,9 +7631,10 @@ class PlayerViewModel {
                 // give the overlay a fresh full window before hiding.
                 if Self.isSystemMenuPresented() {
                     while Self.isSystemMenuPresented() {
-                        try? await Task.sleep(nanoseconds: 500_000_000)
+                        try? await Task.sleep(for: .milliseconds(500))
                         guard !Task.isCancelled else { return }
                     }
+                    self.controlsHideDeadline = Date().addingTimeInterval(Self.autoHideSeconds)
                     continue
                 }
                 #endif
