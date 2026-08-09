@@ -314,6 +314,7 @@ struct IOSSettingsOverview: View {
             Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
                 .font(.headline)
                 .frame(maxWidth: .infinity, minHeight: 50)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .foregroundStyle(Color.red)

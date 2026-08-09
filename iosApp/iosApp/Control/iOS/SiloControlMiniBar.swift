@@ -57,6 +57,7 @@ struct SiloControlMiniBar: View {
                             Image(systemName: controller.clock.isPlaying() ? "pause.fill" : "play.fill")
                                 .font(.system(size: 18, weight: .semibold))
                                 .frame(width: 32, height: 32)
+                                .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(controller.clock.isPlaying() ? "Pause" : "Play")

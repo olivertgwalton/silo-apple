@@ -196,6 +196,8 @@ struct DownloadSortControl: View {
                 }
                 .foregroundColor(.continuumOnSurface)
             }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
 
             Spacer()
 

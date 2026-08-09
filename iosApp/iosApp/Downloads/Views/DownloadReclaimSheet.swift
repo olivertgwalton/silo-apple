@@ -47,6 +47,10 @@ struct DownloadReclaimSheet: View {
             .safeAreaInset(edge: .bottom) { bottomBar }
             .continuumToolbarColorSchemeDark()
         }
+        // macOS sizes a sheet to its content's ideal height, which a
+        // ScrollView does not report — without this the sheet collapses to
+        // its title bar.
+        .presentationSizing(.form)
     }
 
     private var list: some View {

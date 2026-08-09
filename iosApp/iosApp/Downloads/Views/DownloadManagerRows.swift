@@ -279,6 +279,7 @@ struct DownloadAttentionRow: View {
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.continuumOnSurface)
                     .frame(width: 32, height: 32)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             Button(action: onDelete) {
@@ -286,6 +287,7 @@ struct DownloadAttentionRow: View {
                     .font(.system(size: 15))
                     .foregroundColor(.continuumSecondaryText)
                     .frame(width: 32, height: 32)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         }
