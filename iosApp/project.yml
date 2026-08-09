@@ -108,6 +108,7 @@ targets:
           - "Info.plist"
           - "macOS/**"
           - "Screens/Player/PlayerView.swift"
+          - "Screens/Shell/**"
       - path: Resources
         buildPhase: resources
     # PRODUCT_BUNDLE_IDENTIFIER and CODE_SIGN_ENTITLEMENTS live in

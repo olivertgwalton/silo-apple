@@ -189,10 +189,8 @@ private struct SeriesDownloadOptionsSheet: View {
             }
         }
         #if os(iOS)
-        #if !os(macOS)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
-        #endif
         .presentationSizing(.form)
         .presentationDragIndicator(.visible)
         #endif

@@ -64,20 +64,16 @@ struct ProfileSelectionView: View {
                 showCreateProfile = false
                 Task { await viewModel.loadProfiles() }
             }
-            #if !os(macOS)
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
-            #endif
             .presentationSizing(.page)
         }
         #endif
         #if !os(tvOS)
         .sheet(item: $pinEntryContext) { context in
             pinEntryContent(for: context)
-                #if !os(macOS)
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
-                #endif
                 .presentationSizing(.form)
         }
         #endif
