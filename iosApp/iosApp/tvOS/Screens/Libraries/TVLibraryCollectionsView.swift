@@ -143,11 +143,6 @@ struct TVLibraryCollectionsView: View {
         .focused($isEmptyContentFocused)
         .focusEffectDisabled()
         .accessibilityLabel(isLoadingCollections ? "Loading collections" : "No collections yet")
-        .onMoveCommand { direction in
-            if direction == .up {
-                onMoveUp?()
-            }
-        }
         .task(id: focusRequest) {
             guard !isTopMenuFocused else { return }
             await Task.yield()
@@ -205,22 +200,6 @@ struct TVLibraryCollectionsView: View {
 /// Attaches an Up-move handler only when one is supplied, so that cards which
 /// should NOT hand focus up (every card except the first) don't intercept and
 /// consume the Up command the focus engine needs to move between grid rows.
-private struct TVCollectionCardMoveUpHandler: ViewModifier {
-    let onMoveUp: (() -> Void)?
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if let onMoveUp {
-            content.onMoveCommand { direction in
-                if direction == .up {
-                    onMoveUp()
-                }
-            }
-        } else {
-            content
-        }
-    }
-}
 
 /// Grid wrapper around `TVCollectionPosterCard` (§6.3) that carries the
 /// Collections pill's focus machinery: the programmatic entry kick, the
@@ -263,7 +242,6 @@ private struct TVCollectionCard: View {
         )
         .onAppear { applyFocusRequest(focusRequest) }
         .onChange(of: focusRequest) { _, request in applyFocusRequest(request) }
-        .modifier(TVCollectionCardMoveUpHandler(onMoveUp: onMoveUp))
     }
 
     private func applyFocusRequest(_ request: Int) {

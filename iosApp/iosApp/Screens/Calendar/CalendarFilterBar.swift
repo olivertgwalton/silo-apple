@@ -92,11 +92,6 @@ struct CalendarFilterBar: View {
         .padding(containerPadding)
         .siloGlass(in: .capsule)
         .focusSection()
-        .onMoveCommand { direction in
-            if direction == .up {
-                onMoveUp?()
-            }
-        }
         .onAppear { applyFocusRequest(focusRequest) }
         .onChange(of: focusRequest) { _, request in applyFocusRequest(request) }
     }

@@ -83,7 +83,6 @@ struct TVMainTabView: View {
     /// anchor, so focus returns to the dwelled tab/avatar (§7).
     @State private var panelReturnFocus: TVTopMenuPanel?
     @State private var isTopMenuFocused = false
-    @State private var isTopMenuFocusSuppressed = true
     /// True while a route pushed *from the bar* (search, profile/For You
     /// panel items) is on the stack. When the stack pops back to root,
     /// focus returns to the bar — the explicit "next owner" choice
@@ -121,7 +120,6 @@ struct TVMainTabView: View {
                     selectedRoot: selectedRoot,
                     currentProfile: currentProfile,
                     isMenuFocused: $isTopMenuFocused,
-                    isFocusSuppressed: isTopMenuFocusSuppressed,
                     focusRequest: topMenuFocusRequest,
                     focusRequestTarget: panelReturnFocus,
                     openPanel: openPanel,
@@ -131,7 +129,6 @@ struct TVMainTabView: View {
                     onDwell: handleDwell(_:),
                     onEnterPanel: enterPanelFor,
                     onProfilePressed: openProfilePanelImmediately,
-                    onContentFocusHandoff: suppressTopMenuFocusForContentHandoff,
                     onExit: selectedRoot == .home ? nil : returnToHomeInMenu
                 )
             }
@@ -219,7 +216,7 @@ struct TVMainTabView: View {
             // owns focus after a pop, so re-assert the suppressed invariant;
             // Up from content re-arms the bar explicitly as usual.
             if isEmpty {
-                suppressTopMenuFocusForContentHandoff()
+                isTopMenuFocused = false
                 if barOwnsFocusOnPopToRoot {
                     barOwnsFocusOnPopToRoot = false
                     // Deferred one turn: the bar re-mounts in this same
@@ -722,7 +719,7 @@ struct TVMainTabView: View {
             openPanel = nil
         }
         panelHasFocus = false
-        suppressTopMenuFocusForContentHandoff()
+        isTopMenuFocused = false
     }
 
     /// D-pad down past the last cascade row leaves the menu for the page
@@ -926,7 +923,7 @@ struct TVMainTabView: View {
     /// closing any panel, then explicitly re-arm that same focus zone after the
     /// graph changes so tvOS never has to repair from an ownerless state.
     private func reconcileVisibleRootsChange() {
-        let menuOwnedFocus = !isTopMenuFocusSuppressed || panelHasFocus
+        let menuOwnedFocus = isTopMenuFocused || panelHasFocus
         let isShowingRoot = router.path.isEmpty
         let selectedRootWasRemoved = !visibleRoots.contains(selectedRoot)
         let focusRearm = tvVisibleRootsFocusRearm(
@@ -944,7 +941,7 @@ struct TVMainTabView: View {
         case .topMenu:
             focusTopMenuIfVisible()
         case .content:
-            suppressTopMenuFocusForContentHandoff()
+            isTopMenuFocused = false
             contentFocusRequest += 1
         }
     }
@@ -955,7 +952,7 @@ struct TVMainTabView: View {
         let isReselect = root == selectedRoot
         router.popToRoot()
 
-        suppressTopMenuFocusForContentHandoff()
+        isTopMenuFocused = false
         // Selecting a root closes any open dropdown. Pressing a library tab
         // while its cascade preview is open should navigate to that library
         // *and* dismiss the panel: leaving `openPanel` set orphans the dropdown
@@ -1008,7 +1005,6 @@ struct TVMainTabView: View {
         isTopMenuFocused = true
 
         withAnimation(reduceMotion ? nil : ContinuumTheme.springAnimation) {
-            isTopMenuFocusSuppressed = false
             topMenuFocusRequest += 1
         }
     }
@@ -1017,17 +1013,8 @@ struct TVMainTabView: View {
         selectedRoot = .home
         panelReturnFocus = nil
         withAnimation(reduceMotion ? nil : ContinuumTheme.springAnimation) {
-            // Un-suppress before requesting focus: requestMenuFocus drops the
-            // request while the menu is suppressed, which could leave the
-            // Home button unfocused after the exit-to-home gesture.
-            isTopMenuFocusSuppressed = false
             topMenuFocusRequest += 1
         }
-    }
-
-    private func suppressTopMenuFocusForContentHandoff() {
-        isTopMenuFocused = false
-        isTopMenuFocusSuppressed = true
     }
 
     /// Push a route on behalf of a bar element (search button, profile /

@@ -137,7 +137,6 @@ struct TVTopMenuBar: View {
     let selectedRoot: TVRootDestination
     let currentProfile: UserProfile?
     @Binding var isMenuFocused: Bool
-    let isFocusSuppressed: Bool
     let focusRequest: Int
     /// Bar element to focus on the next `focusRequest` bump, overriding the
     /// default of the selected tab. The shell sets this so Menu-ing out of a
@@ -164,10 +163,6 @@ struct TVTopMenuBar: View {
     /// Press on the profile avatar opens the profile panel and enters it
     /// immediately; dwell only previews it.
     let onProfilePressed: () -> Void
-    /// Focus left the bar through normal focus movement into page content.
-    /// The shell uses this to disable the bar again so later content-row
-    /// Up presses can't geometrically jump back to the menu.
-    let onContentFocusHandoff: () -> Void
     var onExit: (() -> Void)? = nil
 
     @FocusState private var focusedItem: TVTopMenuFocus?
@@ -222,7 +217,7 @@ struct TVTopMenuBar: View {
         // Inert while focus is inside a panel, so a stray directional move
         // can't pull focus back to a tab behind it. Preview keeps the bar
         // live — left/right must still cross tabs with a panel showing.
-        .disabled(isFocusSuppressed || panelHasFocus)
+        .disabled(panelHasFocus)
         // Menu handling must not be conditionally wrapped around the focused
         // tab buttons. Toggling an `onExitCommand` ancestor when `openPanel`
         // changes invalidates tvOS focus and produces the preview-open flash.
@@ -233,17 +228,9 @@ struct TVTopMenuBar: View {
             )
             .frame(width: 0, height: 0)
         )
-        .onChange(of: isFocusSuppressed) { _, newValue in
-            if newValue {
-                focusedItem = nil
-                // Focus left the bar for content; a later return to any tab
-                // should dwell-open normally, so drop any close-suppression.
-                dwellSuppressedElement = nil
-            }
-        }
         .onChange(of: focusRequest) { _, _ in
             let target = focusRequestTarget.map { String(describing: $0) } ?? "nil"
-            Self.logger.debug("topMenu.focusRequest request=\(focusRequest, privacy: .public) suppressed=\(isFocusSuppressed, privacy: .public) target=\(target, privacy: .public)")
+            Self.logger.debug("topMenu.focusRequest request=\(focusRequest, privacy: .public) target=\(target, privacy: .public)")
             requestMenuFocus()
         }
         .onChange(of: isMenuFocused) { _, newValue in
@@ -251,8 +238,7 @@ struct TVTopMenuBar: View {
             // taking it (panelHasFocus): the panel claims focus through its
             // own @FocusState and the system clears ours. Nulling here first
             // leaves a frame with nothing focused, which tvOS repairs to the
-            // Home tab — the flash / focus reset. Content hand-off still nulls
-            // via the isFocusSuppressed handler above.
+            // Home tab — the flash / focus reset.
             if !newValue && !panelHasFocus {
                 focusedItem = nil
             }
@@ -298,10 +284,9 @@ struct TVTopMenuBar: View {
                 return
             }
             isMenuFocused = false
+            // A later return to any tab should dwell-open normally.
+            dwellSuppressedElement = nil
             scheduleDwell(for: nil)
-            if !panelHasFocus {
-                onContentFocusHandoff()
-            }
         }
         .onDisappear { dwellTask?.cancel() }
     }
@@ -484,10 +469,6 @@ struct TVTopMenuBar: View {
     }
 
     private func requestMenuFocus() {
-        guard !isFocusSuppressed else {
-            Self.logger.debug("topMenu.requestMenuFocus blocked suppressed=true")
-            return
-        }
         switch focusRequestTarget {
         // A non-nil target means focus is returning from an explicit panel
         // close (focusTopMenuIfVisible(focusing:) is only called that way).
@@ -577,8 +558,7 @@ struct TVTopMenuBar: View {
     /// by `TVTopMenuExitPressCatcher` instead of `.onExitCommand` so changing
     /// `openPanel` never rewrites the focused tab's SwiftUI ancestor chain.
     private var shouldCaptureExitPress: Bool {
-        !isFocusSuppressed
-            && focusedItem != nil
+        focusedItem != nil
             && !panelHasFocus
             && (openPanel != nil || isFocusedAwayFromHome || onExit != nil)
     }

@@ -333,13 +333,12 @@ private struct TVRowMoveHandler: ViewModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if onMoveUp != nil || onMoveDown != nil {
+        if let onMoveDown {
+            // Down only: the section pager has no row below to move to, so
+            // the engine has no destination and the parent must act. Up needs
+            // nothing — the bar is a normal focus region again.
             content.onMoveCommand { direction in
-                switch direction {
-                case .up: onMoveUp?()
-                case .down: onMoveDown?()
-                default: break
-                }
+                if direction == .down { onMoveDown() }
             }
         } else {
             content
