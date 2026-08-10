@@ -50,8 +50,6 @@ struct RecommendationsView: View {
         #else
         VStack(spacing: 0) {
             HStack(spacing: 12) {
-                SidebarToggleButton()
-
                 Text("Recommendations")
                     .font(.continuumTitle)
                     .foregroundColor(.continuumOnSurface)

@@ -104,8 +104,6 @@ struct CalendarView: View {
     private func phoneWeekStrip(proxy: ScrollViewProxy) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
-                SidebarToggleButton()
-
                 Text(viewModel.week.monthLabel)
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundColor(.continuumOnSurface)

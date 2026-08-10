@@ -206,13 +206,15 @@ struct MainTabView: View {
     /// iPad regular width: sidebar list + detail pane.
     /// Selection drives both the highlighted row and the detail content.
     ///
-    /// Home / Libraries / Recommendations hide the nav bar (so SwiftUI's
-    /// default sidebar toggle isn't visible on those screens). We inject a
-    /// toggle closure through `\.sidebarToggle` instead — each custom header
-    /// renders a `SidebarToggleButton` on its leading edge, which collapses
-    /// and re-expands the sidebar. Video playback never lands in the detail
-    /// pane: `router.presentedPlayer` drives a `fullScreenCover` on iPadOS and
-    /// a dedicated `MacPlayerWindow` on macOS.
+    /// The sidebar's collapse affordance is `NavigationSplitView`'s own
+    /// toolbar toggle. The app used to hand a custom toggle closure down
+    /// through the environment so each custom header could draw its own
+    /// button; that produced two toggles side by side on macOS, and the
+    /// native one is better placed on both platforms.
+    ///
+    /// Video playback never lands in the detail pane:
+    /// `router.presentedPlayer` drives a `fullScreenCover` on iPadOS and a
+    /// dedicated `MacPlayerWindow` on macOS.
     private var sidebarLayout: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             List(selection: Binding<MainTabDestinationID?>(
@@ -240,7 +242,6 @@ struct MainTabView: View {
                     }
             }
         }
-        .environment(\.sidebarToggle, toggleSidebar)
         .environment(\.zoomNamespace, zoomNamespace)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             NowPlayingShelf(style: .card)
@@ -255,13 +256,6 @@ struct MainTabView: View {
         selectedDestinationID = destinationID
     }
 
-    /// Collapses or re-expands the sidebar. Animated so the detail pane
-    /// slides into place rather than snapping.
-    private func toggleSidebar() {
-        withAnimation(.easeInOut(duration: 0.25)) {
-            columnVisibility = columnVisibility == .detailOnly ? .all : .detailOnly
-        }
-    }
 
     @ViewBuilder
     private func destinationContent(for destination: MainTabDestination) -> some View {

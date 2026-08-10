@@ -110,9 +110,11 @@ struct HomeView: View {
             .ignoresSafeArea(edges: .top)
 
             HStack(spacing: 12) {
-                SidebarToggleButton()
-
+                // The Mac window's title bar already carries the app name, so
+                // an in-content wordmark reads as the brand stated twice.
+                #if !os(macOS)
                 SiloWordmarkView(width: 72)
+                #endif
 
                 Spacer(minLength: 8)
 
