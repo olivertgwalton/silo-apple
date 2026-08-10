@@ -154,22 +154,6 @@ final class AuthService: @unchecked Sendable {
             expectedAccount: expectedAccount
         )
     }
-
-    func setupAdmin(username: String, email: String, password: String) async throws {
-        guard let expectedAccount = await TokenStore.shared.refreshAccountIdentity() else {
-            throw HTTPError.serverUrlNotConfigured
-        }
-        let response: LoginResponse = try await HTTPClient.shared.post(
-            "/api/v1/auth/setup",
-            body: SetupRequest(username: username, email: email, password: password)
-        )
-        try await installSession(
-            accessToken: response.accessToken,
-            refreshToken: response.refreshToken,
-            expectedAccount: expectedAccount
-        )
-    }
-
     func signup(username: String, email: String, password: String, inviteCode: String) async throws {
         guard let expectedAccount = await TokenStore.shared.refreshAccountIdentity() else {
             throw HTTPError.serverUrlNotConfigured

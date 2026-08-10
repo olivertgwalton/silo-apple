@@ -139,10 +139,6 @@ struct CreateDownloadResponse: Decodable, Sendable {
     }
 }
 
-struct BatchManifestResponse: Decodable, Sendable {
-    let manifests: [OfflineManifest]
-}
-
 /// Per-item result envelope from `POST /api/v1/sync/progress` (§5.1).
 struct SyncProgressResultsResponse: Codable, Sendable {
     let results: [SyncProgressResult]

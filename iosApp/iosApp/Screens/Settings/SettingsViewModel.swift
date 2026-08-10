@@ -191,11 +191,6 @@ final class SettingsViewModel {
         prefs.seed(from: activeProfile)
         await prefs.load()
     }
-
-    func saveSubtitleSizePreference() {
-        UserDefaults.standard.set(subtitleSize, forKey: "subtitleSize")
-    }
-
     /// Apply a shared quality preset, which stores the contract's two axes.
     @MainActor
     func setQualityPreset(_ presetId: String) async {

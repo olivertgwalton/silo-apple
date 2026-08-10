@@ -28,20 +28,6 @@ struct PersonalListMenuItems: View {
     }
 }
 
-extension View {
-    /// Attaches a long-press context menu with the given favorite /
-    /// watchlist items, or leaves the view untouched when `nil` — so
-    /// cards without a catalog identity never get an empty menu.
-    @ViewBuilder
-    func personalListContextMenu(_ items: PersonalListMenuItems?) -> some View {
-        if let items {
-            contextMenu { items }
-        } else {
-            self
-        }
-    }
-}
-
 /// Server sync behind the card context-menu toggles. Mirrors
 /// `ItemDetailViewModel.toggleFavorite/toggleWatchlist`: on success it
 /// writes back the cached per-item user-state pair (so a subsequent

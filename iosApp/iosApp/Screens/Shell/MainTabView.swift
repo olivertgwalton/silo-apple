@@ -392,27 +392,4 @@ struct MainTabView: View {
                 .continuumBackground()
         }
     }
-
-    private var settingsPlaceholder: some View {
-        List {
-            Section {
-                Button("Switch Profile") {
-                    AuthService.shared.profileId = nil
-                    router.showProfileSelection()
-                }
-                .foregroundColor(.continuumOnSurface)
-            }
-
-            Section {
-                Button("Sign Out") {
-                    router.signOutAndReset()
-                }
-                .foregroundColor(.continuumError)
-            }
-        }
-        .continuumScrollContentBackgroundHidden()
-        .background(Color.continuumBackground)
-        .navigationTitle("Settings")
-        .continuumToolbarColorSchemeDark()
-    }
 }

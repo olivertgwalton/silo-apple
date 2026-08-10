@@ -1214,15 +1214,6 @@ struct CollectionGroup: Codable, Identifiable, Hashable {
     let sortOrder: Int?
 }
 
-struct CollectionItemsResponse: Codable {
-    let items: [BrowseItem]
-
-    init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        items = try c.decodeIfPresent([BrowseItem].self, forKey: .items) ?? []
-    }
-}
-
 // MARK: - Admin
 
 struct AdminStats: Codable {
