@@ -319,7 +319,7 @@ struct HomePosterCard: View {
     }
 
     private var artwork: some View {
-        AsyncImageView(
+        CachedAsyncImage(
             url: item.posterUrl ?? "",
             thumbhash: item.posterThumbhash,
             targetSize: CGSize(width: width, height: height),
@@ -468,7 +468,7 @@ struct HomeStillCard: View {
 
     private var artwork: some View {
         ZStack(alignment: .bottom) {
-            AsyncImageView(
+            CachedAsyncImage(
                 url: art.url,
                 thumbhash: art.thumbhash,
                 targetSize: CGSize(width: width, height: height),

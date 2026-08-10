@@ -2,15 +2,11 @@ import SwiftUI
 import NukeUI
 import Nuke
 
-/// Nuke-backed image renderer. Drop-in replacement for the stock
-/// `AsyncImageView` that:
-///
-/// - Reads from the shared `PosterImageCache` pipeline (persistent memory +
-///   disk cache)
-/// - Downsamples to the target render size during decode so a 1080×1620
-///   poster isn't held in memory at full resolution just to draw at 260×390
-/// - Cross-fades in with the same duration as the rest of the app
-/// - Shows a solid surface placeholder that blends with the grid background
+/// The app's image renderer: a `LazyImage` against the shared
+/// `PosterImageCache` pipeline, so every call site gets the persistent memory
+/// + disk cache and decode-time downsampling (a 1080×1620 poster is not held
+/// at full resolution to draw at 260×390). A thumbhash placeholder holds the
+/// space until the decode lands.
 struct CachedAsyncImage: View {
     let url: String
     var thumbhash: String? = nil
@@ -31,19 +27,6 @@ struct CachedAsyncImage: View {
                         .aspectRatio(contentMode: contentMode)
                         .frame(width: geometry.size.width, height: geometry.size.height)
                         .clipped()
-                } else if state.error == nil, let warmed = prefetchedImage() {
-                    // The startup/grid prefetchers warm the memory cache under
-                    // the bare-URL key, while the request above is keyed by
-                    // URL + resize processor — a miss for Nuke's synchronous
-                    // first check. Painting the warmed full-size decode here
-                    // makes a prefetched card render finished on its first
-                    // frame; the downsampled result then swaps in with
-                    // identical pixels, so the handoff is invisible.
-                    Image(platformImage: warmed)
-                        .resizable()
-                        .aspectRatio(contentMode: contentMode)
-                        .frame(width: geometry.size.width, height: geometry.size.height)
-                        .clipped()
                 } else if state.error != nil {
                     placeholder(in: geometry.size)
                         .overlay {
@@ -60,13 +43,6 @@ struct CachedAsyncImage: View {
             .transition(.opacity)
             .animation(.easeOut(duration: ContinuumTheme.slowDuration), value: url)
         }
-    }
-
-    /// Synchronous memory-cache lookup for the unprocessed URL the
-    /// prefetchers warm. Cheap dictionary access — safe to call from `body`.
-    private func prefetchedImage() -> PlatformImage? {
-        guard let url = URL(string: url) else { return nil }
-        return ImagePipeline.shared.cache[ImageRequest(url: url)]?.image
     }
 
     // MARK: - Request construction

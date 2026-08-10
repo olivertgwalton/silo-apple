@@ -188,7 +188,7 @@ private struct RemoteNowPlayingContent: View {
     private var artwork: some View {
         Group {
             if let posterURL, !posterURL.isEmpty {
-                AsyncImageView(url: posterURL, contentMode: .fit)
+                CachedAsyncImage(url: posterURL, contentMode: .fit)
             } else {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(Color.continuumSurfaceElevated)

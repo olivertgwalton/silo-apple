@@ -113,7 +113,7 @@ struct TVAudiobookChaptersView: View {
     private var cover: some View {
         Group {
             if let url = detail.posterUrl, !url.isEmpty {
-                AsyncImageView(
+                CachedAsyncImage(
                     url: url,
                     thumbhash: detail.posterThumbhash,
                     targetSize: CGSize(width: 146, height: 146),
@@ -263,7 +263,7 @@ private struct TVAudiobookRowLabel: View {
             Spacer(minLength: 24)
 
             Text(PlayerTimeFormatter.formatRuntime(row.duration))
-                .font(.system(size: 22))
+                .font(.continuumCaption)
                 .monospacedDigit()
                 .foregroundColor(durationColor)
         }

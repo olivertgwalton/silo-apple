@@ -81,7 +81,7 @@ struct SiloControlMiniBar: View {
     @ViewBuilder
     private var thumb: some View {
         if let url = artwork.posterURL, !url.isEmpty {
-            AsyncImageView(url: url, contentMode: .fill)
+            CachedAsyncImage(url: url, contentMode: .fill)
                 .frame(width: 34, height: 50)
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         } else {

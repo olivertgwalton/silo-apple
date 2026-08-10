@@ -152,7 +152,7 @@ struct ProfileTile: View {
             // Image avatars (DiceBear preset or URL) clip to the full tile
             // bounds for a cinematic poster effect.
             if let url = ProfileAvatarResolver.imageURL(for: avatar) {
-                AsyncImageView(url: url, contentMode: .fill)
+                CachedAsyncImage(url: url, contentMode: .fill)
                     .frame(width: tileSize, height: tileSize)
             } else {
                 initialFallback

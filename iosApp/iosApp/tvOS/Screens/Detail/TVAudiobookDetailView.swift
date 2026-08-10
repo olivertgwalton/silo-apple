@@ -111,7 +111,7 @@ struct TVAudiobookDetailView: View {
     private var background: some View {
         ZStack {
             if let url = detail.posterUrl, !url.isEmpty {
-                AsyncImageView(
+                CachedAsyncImage(
                     url: url,
                     thumbhash: detail.posterThumbhash,
                     targetSize: CGSize(width: 600, height: 600),
@@ -157,7 +157,7 @@ struct TVAudiobookDetailView: View {
     private var cover: some View {
         Group {
             if let url = detail.posterUrl, !url.isEmpty {
-                AsyncImageView(
+                CachedAsyncImage(
                     url: url,
                     thumbhash: detail.posterThumbhash,
                     targetSize: CGSize(width: 460, height: 460),
@@ -278,7 +278,7 @@ struct TVAudiobookDetailView: View {
                 .lineLimit(1)
             if let line2 {
                 Text(line2)
-                    .font(.system(size: 22))
+                    .font(.continuumCaption)
                     .foregroundColor(.white.opacity(0.55))
                     .lineLimit(1)
             }

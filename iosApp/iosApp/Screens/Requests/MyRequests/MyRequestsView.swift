@@ -160,7 +160,7 @@ struct MyRequestsView: View {
     @ViewBuilder
     private func rowThumb(_ record: MediaRequest) -> some View {
         if let url = RequestImageURL.build(record.posterPath, size: .poster) {
-            AsyncImageView(
+            CachedAsyncImage(
                 url: url,
                 targetSize: CGSize(width: 46, height: 69),
                 contentMode: .fill

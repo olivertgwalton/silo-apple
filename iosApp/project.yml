@@ -162,8 +162,6 @@ targets:
           - "Screens/Player/PlayerView.swift"
           - "Screens/Player/PlayerCover.swift"
       - path: iosApp/Screens/Player/PlayerTimeFormatter.swift
-      - path: iosApp/tvOS/Caching/CachedAsyncImage.swift
-      - path: iosApp/tvOS/Caching/PosterImageCache.swift
       - path: Resources
         buildPhase: resources
     postBuildScripts:

@@ -89,7 +89,7 @@ struct PlayerNextUpScreen<MiniPlayer: View>: View {
     @ViewBuilder
     private var backgroundImage: some View {
         if let artwork = backgroundArtwork {
-            AsyncImageView(url: artwork.url, thumbhash: artwork.thumbhash)
+            CachedAsyncImage(url: artwork.url, thumbhash: artwork.thumbhash)
                 .scaledToFill()
                 .blur(radius: 44)
                 .scaleEffect(1.12)

@@ -50,7 +50,7 @@ struct SiloControlArtworkBackground: View {
         ZStack {
             Color.continuumBackground
             if let urlString, !urlString.isEmpty {
-                AsyncImageView(url: urlString, contentMode: .fill, placeholderStyle: .clear)
+                CachedAsyncImage(url: urlString, contentMode: .fill, placeholderStyle: .clear)
                     .id(urlString)
                     .blur(radius: 40)
                     .opacity(0.45)
