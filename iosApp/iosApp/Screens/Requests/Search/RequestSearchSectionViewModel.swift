@@ -11,7 +11,6 @@ final class RequestSearchSectionViewModel {
     private(set) var results: [RequestMediaResult] = []
     private(set) var isLoading = false
 
-    private var searchTask: Task<Void, Never>?
     private let api: ContinuumAPI
 
     /// Cap the inline strip — it supplements library results, it doesn't
@@ -22,33 +21,28 @@ final class RequestSearchSectionViewModel {
         self.api = api
     }
 
-    func onQueryChanged(_ query: String) {
-        searchTask?.cancel()
+    /// Debounced strip search, driven by the same `.task(id:)` the catalog
+    /// search uses so both halves of the screen share one cancellation story
+    /// and one feel. Superseded calls return without touching state.
+    func search(_ query: String) async {
         let trimmed = query.trimmingCharacters(in: .whitespaces)
         guard RequestsFeatureStore.shared.isEnabled, trimmed.count > 1 else {
             results = []
             isLoading = false
             return
         }
-        searchTask = Task {
-            // Same 300ms debounce as `SearchViewModel` for a single feel.
-            try? await Task.sleep(nanoseconds: 300_000_000)
-            guard !Task.isCancelled else { return }
-            await performSearch(trimmed)
-        }
-    }
 
-    private func performSearch(_ trimmed: String) async {
+        do {
+            // Same 300ms debounce as `SearchViewModel` for a single feel.
+            try await Task.sleep(for: .milliseconds(300))
+        } catch {
+            return
+        }
+
         isLoading = true
-        // Cancellation paths must still clear the spinner: a replacement
-        // search re-raises `isLoading` after its own 300ms debounce, so a
-        // cancelled task's `false` can never stomp a successor's `true`.
         do {
             let page = try await api.requestsSearch(query: trimmed)
-            guard !Task.isCancelled else {
-                isLoading = false
-                return
-            }
+            guard !Task.isCancelled else { return }
             // Only titles the library can't already answer — in-library
             // matches are what the catalog grid above is for.
             results = page.results
@@ -56,10 +50,7 @@ final class RequestSearchSectionViewModel {
                 .prefix(maxResults)
                 .map { $0 }
         } catch {
-            guard !Task.isCancelled else {
-                isLoading = false
-                return
-            }
+            guard !Task.isCancelled else { return }
             // Silent: this is a supplementary strip, not the primary search.
             results = []
         }

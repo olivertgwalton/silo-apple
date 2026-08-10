@@ -111,6 +111,26 @@ struct ContinuumTheme {
     static let profileAvatarSize: CGFloat = 80
     #endif
 
+    /// Room a full-page placeholder (`ContentUnavailableView`, a spinner)
+    /// reserves so it reads as centered in the empty area rather than pinned
+    /// under whatever sits above it.
+    #if os(tvOS)
+    static let placeholderMinHeight: CGFloat = 520
+    #else
+    static let placeholderMinHeight: CGFloat = 280
+    #endif
+
+    /// Inset above a scrolling page's first row of content. On tvOS a page
+    /// sitting under the floating top menu bar has to clear it; a page pushed
+    /// onto the navigation stack (which hides the bar) does not.
+    static func pageTopInset(underTopMenuBar: Bool) -> CGFloat {
+        #if os(tvOS)
+        underTopMenuBar ? TVTopMenuLayout.contentTopInset : padding
+        #else
+        smallPadding
+        #endif
+    }
+
     // MARK: - Animation Durations (Plezy mono_tokens)
 
     /// Fast — focus state changes, hover effects (120ms)

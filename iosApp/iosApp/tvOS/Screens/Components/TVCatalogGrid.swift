@@ -25,6 +25,11 @@ struct TVCatalogGrid: View {
     /// side-rail squeezes the usable width and the default cards would
     /// overflow their grid cells.
     var cardWidth: CGFloat = ContinuumTheme.posterCardWidth
+    /// Width the grid actually has to spend, when the caller knows it's less
+    /// than the screen's content column — search hands half the screen to the
+    /// system keyboard. `nil` keeps the full-width assumption, so the count
+    /// comes from `columnCount` and the poster-size preference alone.
+    var availableWidth: CGFloat?
     var prefersDefaultFocusOnFirstItem: Bool = false
     var focusRequest: Int = 0
 
@@ -34,7 +39,7 @@ struct TVCatalogGrid: View {
     @State private var uiCustomization = UICustomizationPreferences.shared
     @Environment(AppRouter.self) private var router
 
-    private let columnSpacing: CGFloat = 40
+    private let columnSpacing = AdaptiveColumns.tvPosterColumnSpacing
     private let rowSpacing: CGFloat = 60
 
     /// Trigger prefetch/pagination when a cell within this many rows of
@@ -43,10 +48,20 @@ struct TVCatalogGrid: View {
     /// before the user reaches the bottom.
     private let prefetchRowsRemaining: Int = 8
 
+    /// The poster-size preference picks the count; a caller-supplied width has
+    /// the final say, because cards are a fixed size and a count that doesn't
+    /// fit is drawn past the edge rather than shrunk.
     private var resolvedColumnCount: Int {
-        AdaptiveColumns.tvPosterCount(
+        let preferred = AdaptiveColumns.tvPosterCount(
             standardCount: columnCount,
             posterSize: uiCustomization.cardPresentation.posterSize
+        )
+        guard let availableWidth else { return preferred }
+        return AdaptiveColumns.tvPosterCountThatFits(
+            preferredCount: preferred,
+            availableWidth: availableWidth,
+            cardWidth: cardWidth,
+            spacing: AdaptiveColumns.tvPosterColumnSpacing
         )
     }
 

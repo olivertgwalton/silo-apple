@@ -88,6 +88,10 @@ enum AdaptiveColumns {
         }
     }
 
+    /// Gap between tvOS poster columns. Shared so a screen fitting a count to
+    /// its own width measures against the spacing the grid lays out with.
+    static let tvPosterColumnSpacing: CGFloat = 40
+
     /// Keeps tvOS poster grids dense enough for compact artwork while making
     /// room for large artwork and its native focus lift. Six columns is the
     /// safe upper bound inside the standard 1,760-point content width.
@@ -104,6 +108,32 @@ enum AdaptiveColumns {
         case .large:
             return max(minimumCount, standardCount - 1)
         }
+    }
+
+    /// Narrows `preferredCount` to the columns that actually fit
+    /// `availableWidth`.
+    ///
+    /// tvOS cards keep a fixed frame — the focus lift needs a stable one — so
+    /// unlike the phone grids the column *count* is the only free variable.
+    /// A screen that owns the full width gets its preferred count back
+    /// untouched; one the system shares with something else (search, which
+    /// gives half the screen to the keyboard panel) drops columns instead of
+    /// drawing the last one past the edge.
+    static func tvPosterCountThatFits(
+        preferredCount: Int,
+        availableWidth: CGFloat,
+        cardWidth: CGFloat,
+        spacing: CGFloat,
+        minimumCount: Int = 3
+    ) -> Int {
+        // Before the first layout pass reports a width, trust the preference —
+        // same "never wildly wrong on frame one" rule as `posters`.
+        guard availableWidth > 0, cardWidth > 0 else { return preferredCount }
+        // Half a point of slack: a count that fits exactly (six standard
+        // posters in the 1,760pt content column) must survive a measurement
+        // that lands a hair under its own layout width.
+        let fitted = Int((availableWidth + spacing + 0.5) / (cardWidth + spacing))
+        return min(preferredCount, max(minimumCount, fitted))
     }
 }
 
