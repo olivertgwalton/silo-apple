@@ -113,6 +113,7 @@ struct TVSkylineSectionFeed: View {
                     .padding(.bottom, trailingPreviewPadding)
                 }
                 .scrollTargetBehavior(.viewAligned)
+                .focusGroup()
                 // Animated ride home; the first card's focus claim is
                 // re-asserted by MediaRow until the scroll settles, so the
                 // animation can't lose the claim to mid-flight focus repairs.
