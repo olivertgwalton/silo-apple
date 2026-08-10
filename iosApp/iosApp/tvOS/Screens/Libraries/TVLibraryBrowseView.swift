@@ -18,8 +18,6 @@ struct TVLibraryBrowseView: View {
     /// dropped while the user is up in the menu so data loads never yank
     /// focus.
     var isTopMenuFocused: Bool = false
-    /// Boundary hand-up — Up from row 1 reaches the top bar.
-    let onMoveUp: (() -> Void)?
 
     // MARK: - State
 
@@ -51,7 +49,6 @@ struct TVLibraryBrowseView: View {
                     sections: contentSections,
                     focusRequest: focusRequest,
                     isTopMenuFocused: isTopMenuFocused,
-                    onTopMenuFocusRequest: onMoveUp,
                     onItemTap: { router.navigate(to: .itemDetail(contentId: $0)) }
                 )
             }

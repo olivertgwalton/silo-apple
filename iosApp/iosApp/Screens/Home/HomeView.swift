@@ -13,7 +13,6 @@ struct HomeView: View {
     /// claims are dropped while the user is up in the menu so late data
     /// loads never yank focus.
     var isTopMenuFocused: Bool = false
-    var onTopMenuFocusRequest: (() -> Void)? = nil
 
     @State private var viewModel = HomeViewModel()
     #if !os(tvOS)
@@ -56,7 +55,6 @@ struct HomeView: View {
                     sections: displayedSections,
                     focusRequest: homeFocusRequest,
                     isTopMenuFocused: isTopMenuFocused,
-                    onTopMenuFocusRequest: onTopMenuFocusRequest,
                     onItemTap: { navigateToDetail($0) },
                     onRemoveFromContinueWatching: dismissContinueWatching,
                     onSetWatched: setWatched

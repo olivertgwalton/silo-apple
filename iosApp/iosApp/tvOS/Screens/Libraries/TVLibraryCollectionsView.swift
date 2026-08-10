@@ -12,8 +12,6 @@ struct TVLibraryCollectionsView: View {
     /// Whether the top menu currently holds focus; deferred entry claims
     /// are dropped while the user is up in the menu.
     var isTopMenuFocused: Bool = false
-    /// Boundary hand-up toward the pill row for the first card.
-    let onMoveUp: (() -> Void)?
 
     @State private var collectionSections: [LibraryCollectionSection] = []
     @State private var isLoadingCollections = true
@@ -103,7 +101,6 @@ struct TVLibraryCollectionsView: View {
                                     prefersDefaultFocus: isFirstOverall,
                                     defaultFocusNamespace: collectionsFocusNamespace,
                                     focusRequest: isFirstOverall ? contentFocusToken : 0,
-                                    onMoveUp: isFirstOverall ? onMoveUp : nil,
                                     action: {
                                         router.navigate(to: .libraryCollection(
                                             libraryId: library.id,
@@ -197,14 +194,10 @@ struct TVLibraryCollectionsView: View {
 
 // MARK: - Collection card
 
-/// Attaches an Up-move handler only when one is supplied, so that cards which
-/// should NOT hand focus up (every card except the first) don't intercept and
-/// consume the Up command the focus engine needs to move between grid rows.
-
 /// Grid wrapper around `TVCollectionPosterCard` (§6.3) that carries the
-/// Collections pill's focus machinery: the programmatic entry kick, the
-/// first-card hand-up to the pill row, and the recycle guard. The visual
-/// is the shared poster card; this struct owns only focus plumbing.
+/// Collections pill's focus machinery: the programmatic entry kick and the
+/// recycle guard. The visual is the shared poster card; this struct owns
+/// only focus plumbing.
 private struct TVCollectionCard: View {
     let collection: LibraryCollection
     var prefersDefaultFocus: Bool = false
@@ -214,11 +207,6 @@ private struct TVCollectionCard: View {
     /// `prefersDefaultFocus` alone doesn't fire when the scope isn't being
     /// entered by the engine.
     var focusRequest: Int = 0
-    /// Supplied only to the first collection card: Up returns focus to the
-    /// pill row — the Collections analogue of the Browse layout's first-row
-    /// hand-up. Attached to this card alone so Up from lower grid rows still
-    /// moves to the row above instead of jumping to the chrome.
-    var onMoveUp: (() -> Void)? = nil
     let action: () -> Void
 
     /// Drives the programmatic entry kick through the poster card's external

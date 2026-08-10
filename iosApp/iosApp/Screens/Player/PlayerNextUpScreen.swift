@@ -358,8 +358,7 @@ struct PlayerNextUpScreen<MiniPlayer: View>: View {
             showProgress: true,
             icon: "play.circle.fill",
             layout: .thumbnail,
-            focusRequest: onDeckFocusRequest,
-            onMoveUp: focusAboveOnDeck
+            focusRequest: onDeckFocusRequest
         )
     }
 
@@ -396,14 +395,6 @@ struct PlayerNextUpScreen<MiniPlayer: View>: View {
             return
         }
         focusFirstOnDeckItem()
-    }
-
-    private func focusAboveOnDeck() {
-        if viewModel.nextUpEpisode != nil {
-            focusedTarget = .autoPlay
-            return
-        }
-        focusPreferredAction()
     }
 
     private func focusFirstOnDeckItem() {

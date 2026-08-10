@@ -15,7 +15,6 @@ struct CalendarFilterBar: View {
     /// remote is never dead when the Calendar tab swaps in.
     var focusRequest: Int = 0
     /// tvOS: edge-up escape back to the top menu bar.
-    var onMoveUp: (() -> Void)? = nil
 
     #if os(tvOS)
     @FocusState private var focusedFilter: CalendarFilter?

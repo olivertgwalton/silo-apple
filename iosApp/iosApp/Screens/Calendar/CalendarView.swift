@@ -8,7 +8,6 @@ struct CalendarView: View {
     /// changes (the Calendar root was selected), focus is pushed onto
     /// the filter bar so the screen never opens with a dead remote.
     var focusRequest: Int = 0
-    var onTopMenuFocusRequest: (() -> Void)? = nil
 
     @State private var viewModel = CalendarViewModel()
     @State private var currentProfile: UserProfile?
@@ -203,8 +202,7 @@ struct CalendarView: View {
                         CalendarFilterBar(
                             selected: viewModel.filter,
                             onSelect: { viewModel.select(filter: $0) },
-                            focusRequest: focusRequest,
-                            onMoveUp: onTopMenuFocusRequest
+                            focusRequest: focusRequest
                         )
 
                         Spacer(minLength: 0)

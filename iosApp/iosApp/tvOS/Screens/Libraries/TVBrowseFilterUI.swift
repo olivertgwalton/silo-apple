@@ -16,8 +16,6 @@ struct TVBrowseControlRow: View {
     let sortDirection: String
     let filterCount: Int
     var focusRequest: Int = 0
-    var onMoveUp: (() -> Void)? = nil
-    var onMoveDown: (() -> Void)? = nil
     let onSort: () -> Void
     let onFilter: () -> Void
 
@@ -36,7 +34,6 @@ struct TVBrowseControlRow: View {
             }
             .buttonStyle(TVBrowseControlPillStyle())
             .focused($focusedControl, equals: .sort)
-            .onMoveCommand(perform: handleVerticalExit)
 
             Button(action: onFilter) {
                 HStack(spacing: 10) {
@@ -53,7 +50,6 @@ struct TVBrowseControlRow: View {
             }
             .buttonStyle(TVBrowseControlPillStyle(active: filterCount > 0))
             .focused($focusedControl, equals: .filter)
-            .onMoveCommand(perform: handleVerticalExit)
 
             Spacer(minLength: 0)
         }
@@ -70,13 +66,6 @@ struct TVBrowseControlRow: View {
     }
 
 
-    /// Down only. The grid below is reached by the engine, but the page
-    /// scrolls it into view, so the parent still needs the signal. Up needs
-    /// nothing — the bar is a normal focus region again.
-    private func handleVerticalExit(_ direction: MoveCommandDirection) {
-        guard direction == .down else { return }
-        onMoveDown?()
-    }
 }
 
 private enum TVBrowseControlFocus: Hashable {
