@@ -21,9 +21,6 @@ struct PhoneDetailHero<Actions: View, BelowOverview: View>: View {
     let ratingChip: String?
     let overview: String?
     let factsLine: [DetailHeroFactToken]
-    /// Overlay data for the backdrop. `nil` skips overlay rendering
-    /// (e.g. when the detail payload didn't carry an OverlaySummary).
-    var overlayData: OverlayData? = nil
     @ViewBuilder let actions: () -> Actions
     /// Affordance rendered directly under the overview (e.g. the on-view
     /// description-translation control). Pass `{ EmptyView() }` when there's
@@ -33,7 +30,6 @@ struct PhoneDetailHero<Actions: View, BelowOverview: View>: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var availableWidth: CGFloat = 0
     @State private var showFullOverview = false
-    @EnvironmentObject private var overlayStore: OverlayPrefsStore
 
     private let expandedLayoutBreakpoint: CGFloat = 640
 
@@ -196,15 +192,6 @@ struct PhoneDetailHero<Actions: View, BelowOverview: View>: View {
     private var backdropBlock: some View {
         ZStack(alignment: .bottom) {
             backdrop
-            if let overlayData, overlayStore.enabled {
-                CardOverlays(
-                    data: overlayData,
-                    prefs: overlayStore.prefs,
-                    variant: .hero
-                )
-                .frame(height: backdropHeight)
-                .frame(maxWidth: .infinity)
-            }
             bottomFade
         }
         .frame(height: backdropHeight)

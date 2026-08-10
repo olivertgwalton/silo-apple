@@ -21,7 +21,6 @@ struct CardOverlays: View {
         case poster      // standard 2:3 poster card
         case wide        // backdrop card (continue watching, hero) — leaves
                          // headroom for the title block / progress bar.
-        case hero        // large backdrop (detail-page hero, featured carousel)
     }
 
     var body: some View {
@@ -71,17 +70,16 @@ struct CardOverlays: View {
     }
 
     private func insets(for position: OverlayPosition) -> EdgeInsets {
-        // `wide` and `hero` variants leave more bottom room because a
-        // title block / progress bar typically sits under the image.
+        // The `wide` variant leaves more bottom room because a title
+        // block / progress bar typically sits under the image.
         let bottomInset: CGFloat = {
             switch variant {
             case .poster: return 8
             case .wide:   return 24
-            case .hero:   return 16
             }
         }()
-        let sideInset: CGFloat = variant == .hero ? 16 : 8
-        let topInset: CGFloat  = variant == .hero ? 16 : 8
+        let sideInset: CGFloat = 8
+        let topInset: CGFloat = 8
         switch position {
         case .topLeft:
             return EdgeInsets(top: topInset, leading: sideInset, bottom: 0, trailing: 0)
