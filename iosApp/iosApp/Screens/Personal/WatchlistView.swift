@@ -9,15 +9,9 @@ struct WatchlistView: View {
     @State private var error: ErrorState?
     @State private var uiCustomization = UICustomizationPreferences.shared
     @Environment(AppRouter.self) private var router
-    @Environment(\.horizontalSizeClass) private var hSize
-    @State private var gridWidth: CGFloat = 0
 
     private var columns: [GridItem] {
-        AdaptiveColumns.posters(
-            for: hSize,
-            availableWidth: gridWidth,
-            posterSize: uiCustomization.cardPresentation.posterSize
-        )
+        AdaptiveColumns.posterColumns(uiCustomization.cardPresentation.posterSize)
     }
 
     init(showsNavigationTitle: Bool = true) {
@@ -82,7 +76,6 @@ struct WatchlistView: View {
                     .frame(maxWidth: .infinity)
                 }
             }
-            .posterGridWidth($gridWidth)
             .padding(ContinuumTheme.padding)
         }
     }

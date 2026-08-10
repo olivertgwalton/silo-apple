@@ -51,7 +51,7 @@ struct RequestMediaCard: View {
     }
 
     private var height: CGFloat {
-        width * (ContinuumTheme.posterCardHeight / ContinuumTheme.posterCardWidth)
+        width / ContinuumTheme.posterAspectRatio
     }
 
     var body: some View {

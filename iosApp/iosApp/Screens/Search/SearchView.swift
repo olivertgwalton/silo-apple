@@ -7,10 +7,6 @@ struct SearchView: View {
     @State private var navPrefs = AppNavPreferences.shared
     @Environment(AppRouter.self) private var router
     @FocusState private var isSearchFieldFocused: Bool
-    /// Width the search container actually hands this screen. On tvOS the
-    /// system gives roughly half of it to the keyboard panel, so the results
-    /// grid can't assume the usual full-screen content column.
-    @State private var containerWidth: CGFloat = 0
     private let usesTopMenuInset: Bool
 
     init(usesTVTopMenuInset: Bool = true) {
@@ -44,10 +40,6 @@ struct SearchView: View {
             .padding(.horizontal, ContinuumTheme.padding)
             .padding(.top, ContinuumTheme.pageTopInset(underTopMenuBar: usesTopMenuInset))
         }
-        // Measured on the scroll view, not its content: the container's width
-        // is fixed by the presentation, so the reading can't feed back into
-        // the column count it decides.
-        .posterGridWidth($containerWidth)
         .continuumSearchBackground()
         .navigationTitle("Search")
         .continuumNavigationTitleDisplayMode(.inline)
@@ -137,8 +129,6 @@ struct SearchView: View {
                 onLoadMore: {
                     Task { await viewModel.loadMore() }
                 },
-                cardWidth: resultCardWidth,
-                availableWidth: resultsWidth,
                 prefersDefaultFocusOnFirstItem: true
             )
         }
@@ -163,11 +153,4 @@ struct SearchView: View {
 
     /// Cap on the media-type control's width.
     private var filterWidth: CGFloat { 760 }
-
-    /// Content width inside the scroll view's own horizontal padding.
-    private var resultsWidth: CGFloat { containerWidth - ContinuumTheme.padding * 2 }
-
-    /// Narrower than the full-screen `posterCardWidth` so the tvOS results
-    /// column still lands five across next to the system keyboard panel.
-    private var resultCardWidth: CGFloat { 200 }
 }

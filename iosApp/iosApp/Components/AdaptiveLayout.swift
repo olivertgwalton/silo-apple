@@ -1,91 +1,32 @@
 import SwiftUI
 
-/// Width-aware poster grid columns.
+/// Poster grid geometry.
 ///
-/// Column count is derived from the width the grid actually gets, not from
-/// the size class alone. The size class only picks the *target* poster width
-/// — phones want dense 3-up artwork, regular-width canvases (iPad, Mac) want
-/// larger posters — and the container width then decides how many of those
-/// fit. This is what makes a resizable Mac window and iPad Split View behave:
-/// `horizontalSizeClass` is permanently `.regular` on macOS, so a size-class
-/// count alone pinned every window to five stretched columns.
-///
-/// Call sites pass their measured width via `posterGridWidth(_:)`; until the
-/// first layout pass reports one, the size-class count is used so the very
-/// first frame is never empty or wildly wrong.
+/// Off tvOS there is no column *count* to compute: `GridItem(.adaptive)` fits
+/// as many columns of at least `posterMinWidth` as the container can hold and
+/// re-flows on every resize, so a phone, an iPad in Split View, and a dragged
+/// Mac window all just work without measuring anything. All this type still
+/// owns off tvOS is the minimum width the user's poster-size preference maps
+/// onto. tvOS keeps an explicit count because its grid rows are focus
+/// sections (see `TVCatalogGrid`).
 enum AdaptiveColumns {
-    /// Target poster width for a compact canvas (iPhone portrait, narrow
-    /// Split View). Three columns across a 390pt phone.
-    private static let compactIdealPosterWidth: CGFloat = 116
-    /// Target poster width for a regular canvas (iPad, Mac). Five columns
-    /// across a full-screen 1024pt iPad.
-    private static let regularIdealPosterWidth: CGFloat = 200
+    /// Smallest poster the grid draws before dropping a column. Phones land
+    /// on 3-up at the standard size; wider canvases simply fit more.
+    static func posterMinWidth(_ posterSize: CardPosterSize = .standard) -> CGFloat {
+        switch posterSize {
+        case .compact: 96
+        case .standard: 116
+        case .large: 150
+        }
+    }
 
-    static func posters(
-        for sizeClass: UserInterfaceSizeClass?,
-        availableWidth: CGFloat? = nil,
-        posterSize: CardPosterSize = .standard,
+    /// One `.adaptive` column spec sized for `posterSize`. Call sites hand
+    /// this straight to `LazyVGrid` — nothing measures, nothing counts.
+    static func posterColumns(
+        _ posterSize: CardPosterSize = .standard,
         spacing: CGFloat = 12
     ) -> [GridItem] {
-        let count = posterCount(
-            for: sizeClass,
-            availableWidth: availableWidth,
-            posterSize: posterSize,
-            spacing: spacing
-        )
-        return Array(
-            repeating: GridItem(.flexible(), spacing: spacing),
-            count: count
-        )
-    }
-
-    static func posterCount(
-        for sizeClass: UserInterfaceSizeClass?,
-        availableWidth: CGFloat?,
-        posterSize: CardPosterSize = .standard,
-        spacing: CGFloat = 12,
-        minimumCount: Int = 2
-    ) -> Int {
-        guard let availableWidth, availableWidth > 0 else {
-            return sizeClassPosterCount(for: sizeClass, posterSize: posterSize)
-        }
-        let ideal = idealPosterWidth(for: sizeClass, posterSize: posterSize)
-        // Round rather than floor: a canvas that lands just short of the next
-        // whole column is better served by slightly narrower posters than by
-        // stretching the previous count across the leftover width.
-        let fitted = Int(((availableWidth + spacing) / (ideal + spacing)).rounded())
-        return max(minimumCount, fitted)
-    }
-
-    /// Size-class-only count, used before the first width measurement lands.
-    /// Preserves the original 3-up phone / 5-up regular layout.
-    private static func sizeClassPosterCount(
-        for sizeClass: UserInterfaceSizeClass?,
-        posterSize: CardPosterSize
-    ) -> Int {
-        let standardCount = (sizeClass == .regular) ? 5 : 3
-        switch posterSize {
-        case .compact:
-            return sizeClass == .regular ? standardCount + 1 : standardCount
-        case .standard:
-            return standardCount
-        case .large:
-            return max(2, standardCount - 1)
-        }
-    }
-
-    private static func idealPosterWidth(
-        for sizeClass: UserInterfaceSizeClass?,
-        posterSize: CardPosterSize
-    ) -> CGFloat {
-        let base = (sizeClass == .regular)
-            ? regularIdealPosterWidth
-            : compactIdealPosterWidth
-        switch posterSize {
-        case .compact: return base * 0.82
-        case .standard: return base
-        case .large: return base * 1.28
-        }
+        [GridItem(.adaptive(minimum: posterMinWidth(posterSize)), spacing: spacing)]
     }
 
     /// Gap between tvOS poster columns. Shared so a screen fitting a count to
@@ -138,21 +79,6 @@ enum AdaptiveColumns {
 }
 
 extension View {
-    /// Reports this view's laid-out width into `width`, for grids that size
-    /// their columns from the space they were actually given.
-    ///
-    /// Safe to apply directly to a `LazyVGrid`: the grid fills its container's
-    /// width regardless of column count, so the reported width does not change
-    /// when the count does and the measurement cannot oscillate.
-    func posterGridWidth(_ width: Binding<CGFloat>) -> some View {
-        onGeometryChange(for: CGFloat.self) { proxy in
-            proxy.size.width
-        } action: { newWidth in
-            guard abs(newWidth - width.wrappedValue) > 0.5 else { return }
-            width.wrappedValue = newWidth
-        }
-    }
-
     /// Caps form/content width so text fields and buttons don't stretch
     /// edge-to-edge on iPad. iPhones are already narrower than the cap, so
     /// this is a no-op on phone. The second `frame` centers the capped view.

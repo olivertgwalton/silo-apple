@@ -52,9 +52,12 @@ struct MediaRow: View {
     /// focus leaving the row (nil) is deliberately not reported so the
     /// marquee retains the last previewed item while focus is in chrome.
     var onItemFocus: ((SectionItem) -> Void)? = nil
-    /// Optional width for poster/square cards — Skyline's dense landing
-    /// rows (§5.6) pass a compact width. Episode thumbs are unaffected.
-    var cardWidth: CGFloat? = nil
+    /// How many cards span the row's width. Cells derive their width from
+    /// this via `containerRelativeFrame`, so the row re-flows with the window
+    /// instead of drawing fixed-size cards. Skyline's dense landing rows
+    /// (§5.6) raise the count to fit more, smaller posters above the fold.
+    /// `nil` takes the platform default.
+    var visibleCardCount: Int? = nil
     /// Optional tvOS-only vertical padding override for the card strip.
     /// Standard rows keep the default breathing room for focus lift.
     var cardVerticalPadding: CGFloat? = nil
@@ -147,52 +150,59 @@ struct MediaRow: View {
         ScrollView(.horizontal, showsIndicators: false) {
             LazyHStack(spacing: cardSpacing) {
                 ForEach(items) { item in
-                    switch layout {
-                    case .poster, .square:
-                        MediaCard(
-                            title: posterTitle(for: item),
-                            posterUrl: item.posterUrl ?? "",
-                            thumbhash: item.posterThumbhash,
-                            year: item.year,
-                            progress: progressValue(for: item),
-                            userState: item.userState,
-                            overlayData: OverlayData.from(item),
-                            action: { onItemTap(item.contentId) },
-                            playAction: playAction(for: item),
-                            focusedItemId: rowFocusBinding,
-                            contentId: item.contentId,
-                            onRemoveFromContinueWatching: continueWatchingRemovalAction(for: item),
-                            onSetWatched: watchedToggleAction(for: item),
-                            aspect: layout == .square ? .square : .poster,
-                            cardWidthOverride: cardWidth,
-                            episodeBadge: episodeBadge(for: item)
-                        )
-                    case .thumbnail:
-                        EpisodeThumbCard(
-                            item: item,
-                            showProgress: showProgress,
-                            action: { onItemTap(item.contentId) },
-                            playAction: playAction(for: item),
-                            focusedItemId: rowFocusBinding,
-                            onRemoveFromContinueWatching: continueWatchingRemovalAction(for: item),
-                            onSetWatched: watchedToggleAction(for: item)
-                        )
+                    Group {
+                        switch layout {
+                        case .poster, .square:
+                            MediaCard(
+                                title: posterTitle(for: item),
+                                posterUrl: item.posterUrl ?? "",
+                                thumbhash: item.posterThumbhash,
+                                year: item.year,
+                                progress: progressValue(for: item),
+                                userState: item.userState,
+                                overlayData: OverlayData.from(item),
+                                action: { onItemTap(item.contentId) },
+                                playAction: playAction(for: item),
+                                focusedItemId: rowFocusBinding,
+                                contentId: item.contentId,
+                                onRemoveFromContinueWatching: continueWatchingRemovalAction(for: item),
+                                onSetWatched: watchedToggleAction(for: item),
+                                aspect: layout == .square ? .square : .poster,
+                                episodeBadge: episodeBadge(for: item)
+                            )
+                        case .thumbnail:
+                            EpisodeThumbCard(
+                                item: item,
+                                showProgress: showProgress,
+                                action: { onItemTap(item.contentId) },
+                                playAction: playAction(for: item),
+                                focusedItemId: rowFocusBinding,
+                                onRemoveFromContinueWatching: continueWatchingRemovalAction(for: item),
+                                onSetWatched: watchedToggleAction(for: item)
+                            )
+                        }
                     }
+                    .containerRelativeFrame(
+                        .horizontal,
+                        count: resolvedCardCount,
+                        span: 1,
+                        spacing: cardSpacing
+                    )
                 }
             }
-            #if !os(tvOS)
-            .padding(.horizontal, ContinuumTheme.safePadding)
-            #endif
             .padding(.vertical, verticalCardPadding)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        #if os(tvOS)
-        // The leading gutter must be a content *margin*, not padding inside
-        // the scroll content: programmatic `scrollTo(anchor: .leading)` and
-        // the engine's scroll-to-focused both align to the margin-inset
-        // viewport, so with inner padding they overshoot left by the gutter
-        // width and then visibly drift back to the rest position.
+        // The gutter is a content *margin*, not padding inside the scroll
+        // content, for two reasons. On tvOS, programmatic
+        // `scrollTo(anchor: .leading)` and the engine's scroll-to-focused both
+        // align to the margin-inset viewport, so inner padding makes them
+        // overshoot left by the gutter width and visibly drift back. And
+        // everywhere, `containerRelativeFrame` measures the scroll view rather
+        // than the inset content, so the margin is what lets the next card
+        // peek past the edge — the cue that the row scrolls at all.
         .contentMargins(.horizontal, ContinuumTheme.safePadding, for: .scrollContent)
+        #if os(tvOS)
         // tvOS focus lift expands cards on focus — give them breathing room
         // so they don't clip against the row above/below.
         .scrollClipDisabled()
@@ -294,6 +304,32 @@ struct MediaRow: View {
         #else
         return 6
         #endif
+    }
+
+    /// Cards visible across the row. Sizing the cells off a count rather than
+    /// a fixed width is what makes the row behave on a resized Mac window and
+    /// in iPad Split View; the scroll view's content margin then lets the next
+    /// card peek, which is the affordance that says the row scrolls.
+    private var resolvedCardCount: Int {
+        if let visibleCardCount { return visibleCardCount }
+        switch layout {
+        case .thumbnail:
+            #if os(tvOS)
+            return 4
+            #elseif os(macOS)
+            return 4
+            #else
+            return 2
+            #endif
+        case .poster, .square:
+            #if os(tvOS)
+            return 6
+            #elseif os(macOS)
+            return 6
+            #else
+            return 3
+            #endif
+        }
     }
 
     private var cardSpacing: CGFloat {

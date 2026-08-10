@@ -369,15 +369,17 @@ private struct TVPersonDetailContent: View {
                         )
                         .frame(maxWidth: .infinity, minHeight: 420)
                     } else {
-                        TVCatalogGrid(
+                        CatalogGrid(
                             items: viewModel.items,
                             isLoading: viewModel.isLoadingItems,
                             hasMore: viewModel.hasMore,
                             onItemTap: { contentId in
                                 router.navigate(to: .itemDetail(contentId: contentId))
                             },
-                            onNearEnd: { index in
+                            onLoadMore: {
                                 Task { await viewModel.loadMoreIfNeeded() }
+                            },
+                            onCellAppear: { index in
                                 let end = min(index + 48, viewModel.items.count)
                                 viewModel.prefetchPosters(in: index..<end)
                             }

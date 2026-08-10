@@ -8,6 +8,34 @@ enum MediaCardAspect {
     case square
 }
 
+/// tvOS focus visual for a `MediaCard`. Ignored on iOS and macOS, which
+/// have no focus engine.
+enum MediaCardFocusTreatment {
+    /// The system `.card` button style — focus lift, parallax, and halo.
+    /// The default, and what every scrolling row uses.
+    case nativeCard
+    /// White ring + scale with the system halo suppressed, matching the
+    /// episode and cast rails. Used by rails that sit among those cards and
+    /// would otherwise read as a different component.
+    case ring
+}
+
+/// Caption geometry beneath a `MediaCard`'s artwork.
+///
+/// The two cases exist because the app ships two poster treatments today:
+/// scrolling rows caption leading-aligned at subheadline size, grids and
+/// cover rails caption centered a size down. Declaring both here — rather
+/// than in two separate card components — keeps the divergence visible and
+/// cheap to collapse if the design settles on one.
+enum MediaCardCaptionLayout {
+    /// Leading-aligned, `continuumSubheadline` title over `continuumCaption`
+    /// metadata. Used by `MediaRow`.
+    case rowLeading
+    /// Centered, one size down. Used by the tvOS catalog grid and the
+    /// audiobook / recommendation cover rails.
+    case gridCentered
+}
+
 func mediaCardAccessibilityLabel(
     title: String,
     episodeBadge: String?,
@@ -81,10 +109,6 @@ struct MediaCard: View {
     var onRemoveFromContinueWatching: (() -> Void)? = nil
     var onSetWatched: ((Bool) async -> Bool)? = nil
     var aspect: MediaCardAspect = .poster
-    /// Overrides the theme's default card width. Skyline's dense landing
-    /// rows (§5.6) pass 208 so two rows + the marquee fit above the fold;
-    /// the poster keeps its 2:3 ratio.
-    var cardWidthOverride: CGFloat? = nil
     /// "S2 · E10" badge drawn over the bottom-leading corner of the poster
     /// for episodes rendered in a poster row (e.g. "Recently Released
     /// Episodes"). `nil` for movies / series / audiobooks.
@@ -93,6 +117,18 @@ struct MediaCard: View {
     /// menu commits server-side, with the item's new state. Favorites /
     /// Watchlist grids use it to drop the card from the list in place.
     var onUserStateChanged: ((MediaItemUserState) -> Void)? = nil
+    /// Second caption line, rendered in place of the year — e.g. "Book 3" on
+    /// audiobook series rails. tvOS only (off tvOS the caption shows the year).
+    var subtitle: String? = nil
+    /// tvOS focus visual. See `MediaCardFocusTreatment`.
+    var focusTreatment: MediaCardFocusTreatment = .nativeCard
+    /// tvOS caption geometry. See `MediaCardCaptionLayout`.
+    var captionLayout: MediaCardCaptionLayout = .rowLeading
+    /// tvOS: make this card its focus scope's default target, so d-pad entry
+    /// lands here rather than on the geometrically-nearest card.
+    var prefersDefaultFocus: Bool = false
+    /// Namespace the `prefersDefaultFocus` request resolves in.
+    var defaultFocusNamespace: Namespace.ID? = nil
 
     @State private var playedOverride: Bool?
     @State private var favoriteOverride: Bool?
@@ -115,16 +151,15 @@ struct MediaCard: View {
     @State private var zoomInstanceID = UUID()
     #endif
 
-    private var cardWidth: CGFloat {
-        (cardWidthOverride ?? ContinuumTheme.posterCardWidth)
-            * uiCustomization.cardPresentation.posterSize.scale
-    }
-    private var cardHeight: CGFloat {
+    /// Width ÷ height of the artwork. The card claims no absolute size of its
+    /// own: it fills whatever cell the grid or rail hands it and derives its
+    /// height from this. Column count and rail cell width are the layout's
+    /// job (`GridItem(.adaptive)`, `containerRelativeFrame`), which is what
+    /// lets one card serve a phone, a resizable Mac window, and a TV.
+    private var aspectRatio: CGFloat {
         switch aspect {
-        case .poster:
-            cardWidth * (ContinuumTheme.posterCardHeight / ContinuumTheme.posterCardWidth)
-        case .square:
-            cardWidth
+        case .poster: ContinuumTheme.posterAspectRatio
+        case .square: 1
         }
     }
 
@@ -135,9 +170,13 @@ struct MediaCard: View {
         FocusableMediaCard(
             title: title,
             year: year,
+            subtitle: subtitle,
             episodeBadge: episodeBadge,
             captionStyle: uiCustomization.cardPresentation.caption,
-            cardWidth: cardWidth,
+            captionLayout: captionLayout,
+            focusTreatment: focusTreatment,
+            prefersDefaultFocus: prefersDefaultFocus,
+            defaultFocusNamespace: defaultFocusNamespace,
             action: action,
             playAction: playAction,
             focusedItemId: focusedItemId,
@@ -178,7 +217,6 @@ struct MediaCard: View {
             favoriteOverride = nil
             watchlistOverride = nil
         }
-        .frame(width: cardWidth)
         #endif
     }
 
@@ -322,73 +360,65 @@ struct MediaCard: View {
     // MARK: - Subviews
 
     private var posterImage: some View {
-        ZStack(alignment: .bottom) {
-            CachedAsyncImage(
-                url: posterUrl,
-                thumbhash: thumbhash,
-                targetSize: CGSize(width: cardWidth, height: cardHeight),
-                contentMode: .fill
-            )
-                .frame(width: cardWidth, height: cardHeight)
-                .clipped()
-                .clipShape(RoundedRectangle(cornerRadius: ContinuumTheme.cornerRadius))
-
+        // `Color.clear` + `aspectRatio` is the sizing contract: the card takes
+        // the cell's width and computes its own height, so nothing downstream
+        // needs a hardcoded poster dimension. Every badge is an `overlay`
+        // anchored to an edge rather than a view framed to a known size.
+        Color.clear
+            .aspectRatio(aspectRatio, contentMode: .fit)
+            .overlay {
+                CachedAsyncImage(url: posterUrl, thumbhash: thumbhash, contentMode: .fill)
+            }
             // Server / user-customized overlays (resolution, HDR, ratings, …)
             // sit under the watched check + progress bar so those built-in
             // affordances always win the same corner if they conflict.
-            if let overlayData, overlayStore.enabled {
-                CardOverlays(data: overlayData, prefs: overlayStore.prefs, variant: .poster)
-                    .frame(width: cardWidth, height: cardHeight)
-                    .clipShape(RoundedRectangle(cornerRadius: ContinuumTheme.cornerRadius))
+            .overlay {
+                if let overlayData, overlayStore.enabled {
+                    CardOverlays(data: overlayData, prefs: overlayStore.prefs, variant: .poster)
+                }
             }
-
             // Episode badge (e.g. "S2 · E10") for episodes shown as posters,
             // so new episodes of the same series stay distinguishable.
-            if let episodeBadge {
-                Text(episodeBadge)
-                    .font(.continuumCaption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, episodeBadgeHPadding)
-                    .padding(.vertical, episodeBadgeVPadding)
-                    .background(Capsule().fill(Color.black.opacity(0.65)))
-                    .padding(episodeBadgeInset)
-                    .frame(width: cardWidth, height: cardHeight, alignment: .bottomLeading)
+            .overlay(alignment: .bottomLeading) {
+                if let episodeBadge {
+                    Text(episodeBadge)
+                        .font(.continuumCaption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, episodeBadgeHPadding)
+                        .padding(.vertical, episodeBadgeVPadding)
+                        .background(Capsule().fill(Color.black.opacity(0.65)))
+                        .padding(episodeBadgeInset)
+                }
             }
-
-            // Progress bar at bottom of poster (inside rounded corners)
-            if let progress, progress > 0 {
-                VStack {
-                    Spacer()
+            .overlay(alignment: .bottom) {
+                if let progress, progress > 0 {
                     ProgressBar(value: progress)
                 }
-                .frame(width: cardWidth, height: cardHeight)
-                .clipShape(RoundedRectangle(cornerRadius: ContinuumTheme.cornerRadius))
             }
-
             // Watched indicator — white circle with check (Plezy style)
-            if isPlayed {
-                HStack {
-                    Spacer()
+            .overlay(alignment: .topTrailing) {
+                if isPlayed {
                     ZStack {
                         Circle()
                             .fill(Color.continuumOnSurface)
-                            .frame(width: checkBadgeSize, height: checkBadgeSize)
                             .shadow(color: .black.opacity(0.3), radius: 4)
                         Image(systemName: "checkmark")
                             .font(.system(size: checkIconSize, weight: .bold))
                             .foregroundColor(Color.continuumBackground)
                     }
+                    .frame(width: checkBadgeSize, height: checkBadgeSize)
+                    .padding(checkBadgePadding)
                 }
-                .padding(checkBadgePadding)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             }
-
-            #if !os(tvOS)
-            DownloadedBadgeOverlay(contentId: contentId, padding: checkBadgePadding)
-            #endif
-        }
-        .frame(width: cardWidth, height: cardHeight)
+            // Pins itself bottom-trailing; just needs to span the card.
+            .overlay {
+                #if !os(tvOS)
+                DownloadedBadgeOverlay(contentId: contentId, padding: checkBadgePadding)
+                #endif
+            }
+            .clipShape(RoundedRectangle(cornerRadius: ContinuumTheme.cornerRadius))
+            .compositingGroup()
     }
 
     private var isPlayed: Bool {
@@ -500,9 +530,14 @@ extension View {
 private struct FocusableMediaCard<Content: View>: View {
     let title: String
     let year: Int?
+    /// Replaces the year on the caption's second line when present.
+    let subtitle: String?
     let episodeBadge: String?
     let captionStyle: CardCaptionStyle
-    let cardWidth: CGFloat
+    let captionLayout: MediaCardCaptionLayout
+    let focusTreatment: MediaCardFocusTreatment
+    let prefersDefaultFocus: Bool
+    let defaultFocusNamespace: Namespace.ID?
     let action: () -> Void
     let playAction: (() -> Void)?
     /// Parent row's focus tracking binding. When paired with `itemId`,
@@ -521,50 +556,94 @@ private struct FocusableMediaCard<Content: View>: View {
 
     @FocusState private var isFocused: Bool
 
+    private var captionAlignment: HorizontalAlignment {
+        captionLayout == .gridCentered ? .center : .leading
+    }
+
+    private var captionFrameAlignment: Alignment {
+        captionLayout == .gridCentered ? .center : .leading
+    }
+
+    /// Gap between the artwork and its caption. The centered grid caption
+    /// sits tighter under the poster than the row caption, which has to clear
+    /// the taller `.card` focus lift.
+    private var captionSpacing: CGFloat {
+        captionLayout == .gridCentered ? 16 : 22
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
+        VStack(alignment: captionAlignment, spacing: captionSpacing) {
             mediaButton
 
             if captionStyle.showsTitle {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: captionAlignment, spacing: 4) {
                     Text(title)
-                        .font(.continuumSubheadline)
+                        .font(captionLayout == .gridCentered ? .continuumCaption.weight(.semibold) : .continuumSubheadline)
                         .foregroundStyle(
                             isFocused
                                 ? Color.continuumOnSurface
-                                : Color.continuumOnSurface.opacity(0.85)
+                                : Color.continuumOnSurface.opacity(
+                                    captionLayout == .gridCentered ? 0.92 : 0.85
+                                )
                         )
                         // Single line, truncated — keeps poster cards a uniform
                         // height and the row short under the bottom-anchored marquee.
                         .lineLimit(1)
                         .truncationMode(.tail)
-                        .animation(.easeOut(duration: 0.15), value: isFocused)
+                        .animation(.easeOut(duration: ContinuumTheme.fastDuration), value: isFocused)
 
-                    if captionStyle.showsMetadata, let year {
-                        Text(String(year))
-                            .font(.continuumCaption)
+                    if captionStyle.showsMetadata, let secondLine = subtitle ?? year.map(String.init) {
+                        Text(secondLine)
+                            .font(.continuumSmall)
                             .foregroundStyle(Color.continuumSecondaryText)
                     }
                 }
-                .frame(width: cardWidth, alignment: .leading)
+                .multilineTextAlignment(captionLayout == .gridCentered ? .center : .leading)
+                .frame(maxWidth: .infinity, alignment: captionFrameAlignment)
             }
         }
-        .frame(width: cardWidth)
     }
 
     @ViewBuilder
     private var mediaButton: some View {
         let button = Button(action: action) {
             content()
+                // The `.ring` treatment suppresses the system halo in
+                // `MediaCardRingButtonStyle`, so the poster draws its own cue.
+                .overlay {
+                    if focusTreatment == .ring {
+                        RoundedRectangle(cornerRadius: ContinuumTheme.cornerRadius)
+                            .stroke(
+                                Color.white.opacity(isFocused ? 0.9 : 0),
+                                lineWidth: isFocused ? 4 : 0
+                            )
+                            .animation(
+                                .easeOut(duration: ContinuumTheme.fastDuration),
+                                value: isFocused
+                            )
+                    }
+                }
         }
-        .buttonStyle(.card)
         .focused($isFocused)
+        .applyDefaultFocusIfNeeded(prefersDefaultFocus, namespace: defaultFocusNamespace)
         .applyRowFocus(focusedItemId, itemId: itemId)
         .applyPlayPauseAction(playAction)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityDescription)
 
-        mediaButtonWithContext(button)
+        mediaButtonWithContext(styledButton(button))
+    }
+
+    /// `.card` and the ring style have different `ButtonStyle` types, so the
+    /// branch has to produce a single erased view rather than two buttons.
+    @ViewBuilder
+    private func styledButton<ButtonContent: View>(_ button: ButtonContent) -> some View {
+        switch focusTreatment {
+        case .nativeCard:
+            button.buttonStyle(.card)
+        case .ring:
+            button.buttonStyle(MediaCardRingButtonStyle())
+        }
     }
 
     @ViewBuilder
@@ -617,6 +696,40 @@ private struct FocusableMediaCard<Content: View>: View {
                 Label("Remove from Continue Watching", systemImage: "xmark.circle")
             }
         }
+    }
+}
+
+/// Poster focus style matching the episode/cast cards: scale + drop shadow
+/// with the system halo suppressed. The white ring the card draws over its
+/// artwork is the focus cue. Selected by `MediaCardFocusTreatment.ring`.
+private struct MediaCardRingButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        MediaCardRingButtonBody(configuration: configuration)
+    }
+}
+
+private struct MediaCardRingButtonBody: View {
+    let configuration: ButtonStyleConfiguration
+
+    @Environment(\.isFocused) private var isFocused
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        configuration.label
+            .scaleEffect(scale)
+            .shadow(
+                color: .black.opacity(isFocused ? 0.45 : 0.0),
+                radius: isFocused ? 18 : 0,
+                y: isFocused ? 8 : 0
+            )
+            .focusEffectDisabled()
+            .animation(.easeOut(duration: ContinuumTheme.fastDuration), value: isFocused)
+            .animation(.easeOut(duration: ContinuumTheme.fastDuration), value: configuration.isPressed)
+    }
+
+    private var scale: CGFloat {
+        let base: CGFloat = isFocused && !reduceMotion ? 1.05 : 1.0
+        return configuration.isPressed ? base * 0.97 : base
     }
 }
 

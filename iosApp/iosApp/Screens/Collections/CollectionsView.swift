@@ -444,15 +444,9 @@ struct LibraryCollectionsView: View {
 
     @State private var viewModel = LibraryCollectionsViewModel()
     @State private var uiCustomization = UICustomizationPreferences.shared
-    @Environment(\.horizontalSizeClass) private var hSize
-    @State private var gridWidth: CGFloat = 0
 
     private var columns: [GridItem] {
-        AdaptiveColumns.posters(
-            for: hSize,
-            availableWidth: gridWidth,
-            posterSize: uiCustomization.cardPresentation.posterSize
-        )
+        AdaptiveColumns.posterColumns(uiCustomization.cardPresentation.posterSize)
     }
 
     var body: some View {
@@ -514,7 +508,6 @@ struct LibraryCollectionsView: View {
                     .accessibilityLabel(libraryCollectionAccessibilityLabel(collection))
                 }
             }
-            .posterGridWidth($gridWidth)
         }
     }
 }
@@ -523,12 +516,6 @@ private struct LibraryCollectionCard: View {
     let collection: LibraryCollection
     @State private var uiCustomization = UICustomizationPreferences.shared
 
-    private var cardWidth: CGFloat {
-        ContinuumTheme.posterCardWidth * uiCustomization.cardPresentation.posterSize.scale
-    }
-    private var cardHeight: CGFloat {
-        cardWidth * (ContinuumTheme.posterCardHeight / ContinuumTheme.posterCardWidth)
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -544,7 +531,7 @@ private struct LibraryCollectionCard: View {
                     .clipShape(Capsule())
                     .padding(8)
             }
-            .frame(width: cardWidth, height: cardHeight)
+            .aspectRatio(ContinuumTheme.posterAspectRatio, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: ContinuumTheme.smallCornerRadius))
 
             if uiCustomization.cardPresentation.caption.showsTitle {
@@ -561,7 +548,7 @@ private struct LibraryCollectionCard: View {
                     .lineLimit(1)
             }
         }
-        .frame(width: cardWidth, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
@@ -570,10 +557,9 @@ private struct LibraryCollectionCard: View {
             CachedAsyncImage(
                 url: posterUrl,
                 thumbhash: collection.posterThumbhash,
-                targetSize: CGSize(width: cardWidth, height: cardHeight),
                 contentMode: .fill
             )
-            .frame(width: cardWidth, height: cardHeight)
+            .aspectRatio(ContinuumTheme.posterAspectRatio, contentMode: .fit)
             .clipped()
         } else {
             ZStack {
@@ -582,7 +568,7 @@ private struct LibraryCollectionCard: View {
                     .font(.system(size: 28, weight: .semibold))
                     .foregroundColor(.continuumSecondaryText)
             }
-            .frame(width: cardWidth, height: cardHeight)
+            .aspectRatio(ContinuumTheme.posterAspectRatio, contentMode: .fit)
         }
     }
 

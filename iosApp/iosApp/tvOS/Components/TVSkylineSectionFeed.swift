@@ -149,7 +149,7 @@ struct TVSkylineSectionFeed: View {
             onItemFocus: { item in
                 previewFocusedItem(item, in: section)
             },
-            cardWidth: ContinuumTheme.Skyline.densePosterCardWidth,
+            visibleCardCount: ContinuumTheme.Skyline.densePosterColumnCount,
             cardVerticalPadding: ContinuumTheme.Skyline.rowBandCardVerticalPadding,
         )
     }

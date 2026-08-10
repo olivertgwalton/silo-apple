@@ -17,28 +17,22 @@ struct CatalogGrid: View {
     let hasMore: Bool
     let onItemTap: (String) -> Void
     let onLoadMore: () -> Void
-    /// tvOS: per-card width. Shrink it when a side rail or the system search
-    /// keyboard squeezes the usable width. Ignored elsewhere, where the cards
-    /// flex to the column width instead.
-    var cardWidth: CGFloat = ContinuumTheme.posterCardWidth
-    /// tvOS: width the grid actually has to spend, when the caller knows it's
-    /// less than the screen's content column. `nil` assumes the full width.
-    var availableWidth: CGFloat?
     /// tvOS: make the first card the scope's default focus target.
     var prefersDefaultFocusOnFirstItem: Bool = false
+    /// Fires with the index of a cell as it comes on screen, for callers that
+    /// warm artwork ahead of the scroll (see `PersonDetailViewModel`). This is
+    /// the hook that used to force screens onto `TVCatalogGrid` directly;
+    /// exposing it here keeps them on the one cross-platform entry point.
+    var onCellAppear: ((Int) -> Void)? = nil
 
     @State private var uiCustomization = UICustomizationPreferences.shared
 
     #if !os(tvOS)
-    @Environment(\.horizontalSizeClass) private var hSize
-    @State private var gridWidth: CGFloat = 0
     private let rowSpacing: CGFloat = 12
 
     private var columns: [GridItem] {
-        AdaptiveColumns.posters(
-            for: hSize,
-            availableWidth: gridWidth,
-            posterSize: uiCustomization.cardPresentation.posterSize,
+        AdaptiveColumns.posterColumns(
+            uiCustomization.cardPresentation.posterSize,
             spacing: 8
         )
     }
@@ -54,14 +48,15 @@ struct CatalogGrid: View {
             // Fires per cell across the last rows rather than once per page,
             // so a caller's load-more has to be re-entrant. They all guard on
             // their own `isLoading`.
-            onNearEnd: { _ in onLoadMore() },
-            cardWidth: cardWidth,
-            availableWidth: availableWidth,
+            onNearEnd: { index in
+                onCellAppear?(index)
+                onLoadMore()
+            },
             prefersDefaultFocusOnFirstItem: prefersDefaultFocusOnFirstItem
         )
         #else
         LazyVGrid(columns: columns, spacing: rowSpacing) {
-            ForEach(items) { item in
+            ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                 MediaCard(
                     title: item.title,
                     posterUrl: item.posterUrl ?? "",
@@ -73,15 +68,14 @@ struct CatalogGrid: View {
                     contentId: item.contentId,
                     aspect: item.isAudiobook ? .square : .poster
                 )
-                .frame(maxWidth: .infinity)
                 .onAppear {
+                    onCellAppear?(index)
                     if item.id == items.suffix(6).first?.id, hasMore {
                         onLoadMore()
                     }
                 }
             }
         }
-        .posterGridWidth($gridWidth)
 
         if isLoading {
             HStack {

@@ -35,12 +35,6 @@ struct EpisodeThumbCard: View {
     @State private var zoomInstanceID = UUID()
     #endif
 
-    private var cardWidth: CGFloat {
-        ContinuumTheme.thumbnailCardWidth * uiCustomization.cardPresentation.posterSize.scale
-    }
-    private var cardHeight: CGFloat {
-        cardWidth * (ContinuumTheme.thumbnailCardHeight / ContinuumTheme.thumbnailCardWidth)
-    }
 
     #if os(tvOS)
     @FocusState private var isFocused: Bool
@@ -71,10 +65,9 @@ struct EpisodeThumbCard: View {
                             .lineLimit(1)
                     }
                 }
-                .frame(width: cardWidth, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .frame(width: cardWidth)
         .focusSection()
         .onChange(of: item.userState?.played) { _, _ in
             playedOverride = nil
@@ -92,7 +85,6 @@ struct EpisodeThumbCard: View {
         .onChange(of: item.userState?.played) { _, _ in
             playedOverride = nil
         }
-        .frame(width: cardWidth)
         #endif
     }
 
@@ -128,87 +120,80 @@ struct EpisodeThumbCard: View {
 
     // MARK: - Thumbnail
 
+    /// 16:9 still that fills whatever cell the row hands it — same sizing
+    /// contract as `MediaCard`, so the two card kinds can share a rail.
     private var thumbnail: some View {
-        ZStack(alignment: .bottomLeading) {
-            CachedAsyncImage(
-                url: imageUrl,
-                thumbhash: item.backdropThumbhash ?? item.posterThumbhash,
-                targetSize: CGSize(width: cardWidth, height: cardHeight),
-                contentMode: .fill
-            )
-            .frame(width: cardWidth, height: cardHeight)
-            .clipped()
-            .clipShape(RoundedRectangle(cornerRadius: ContinuumTheme.cornerRadius))
-
+        Color.clear
+            .aspectRatio(ContinuumTheme.thumbnailAspectRatio, contentMode: .fit)
+            .overlay {
+                CachedAsyncImage(
+                    url: imageUrl,
+                    thumbhash: item.backdropThumbhash ?? item.posterThumbhash,
+                    contentMode: .fill
+                )
+            }
             // Scrim gradient so the episode badge reads over bright stills
-            LinearGradient(
-                colors: [.clear, .black.opacity(0.75)],
-                startPoint: .center,
-                endPoint: .bottom
-            )
-            .frame(width: cardWidth, height: cardHeight)
-            .clipShape(RoundedRectangle(cornerRadius: ContinuumTheme.cornerRadius))
-
+            .overlay {
+                LinearGradient(
+                    colors: [.clear, .black.opacity(0.75)],
+                    startPoint: .center,
+                    endPoint: .bottom
+                )
+            }
             // Server / user-customized overlay badges. `wide` variant
             // gives the bottom corners enough headroom that they don't
             // collide with the S/E text + progress bar.
-            if overlayStore.enabled {
-                CardOverlays(
-                    data: OverlayData.from(item),
-                    prefs: overlayStore.prefs,
-                    variant: .wide
-                )
-                .frame(width: cardWidth, height: cardHeight)
-                .clipShape(RoundedRectangle(cornerRadius: ContinuumTheme.cornerRadius))
-            }
-
-            // Episode badge overlay (e.g. "S2 · E3")
-            if let badge = episodeBadge {
-                Text(badge)
-                    .font(.continuumCaption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, badgeHPadding)
-                    .padding(.vertical, badgeVPadding)
-                    .background(
-                        Capsule().fill(Color.black.opacity(0.65))
+            .overlay {
+                if overlayStore.enabled {
+                    CardOverlays(
+                        data: OverlayData.from(item),
+                        prefs: overlayStore.prefs,
+                        variant: .wide
                     )
-                    .padding(badgeInset)
+                }
             }
-
-            // Progress bar (resume)
-            if showProgress, let p = progressValue, p > 0 {
-                VStack {
-                    Spacer()
+            // Episode badge overlay (e.g. "S2 · E3")
+            .overlay(alignment: .bottomLeading) {
+                if let badge = episodeBadge {
+                    Text(badge)
+                        .font(.continuumCaption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, badgeHPadding)
+                        .padding(.vertical, badgeVPadding)
+                        .background(
+                            Capsule().fill(Color.black.opacity(0.65))
+                        )
+                        .padding(badgeInset)
+                }
+            }
+            .overlay(alignment: .bottom) {
+                if showProgress, let p = progressValue, p > 0 {
                     ProgressBar(value: p)
                 }
-                .frame(width: cardWidth, height: cardHeight)
-                .clipShape(RoundedRectangle(cornerRadius: ContinuumTheme.cornerRadius))
             }
-
-            // Watched check
-            if isPlayed {
-                HStack {
-                    Spacer()
+            .overlay(alignment: .topTrailing) {
+                if isPlayed {
                     ZStack {
                         Circle()
                             .fill(Color.continuumOnSurface)
-                            .frame(width: checkBadgeSize, height: checkBadgeSize)
                             .shadow(color: .black.opacity(0.3), radius: 4)
                         Image(systemName: "checkmark")
                             .font(.system(size: checkIconSize, weight: .bold))
                             .foregroundColor(Color.continuumBackground)
                     }
+                    .frame(width: checkBadgeSize, height: checkBadgeSize)
+                    .padding(badgeInset)
                 }
-                .padding(badgeInset)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             }
-
-            #if !os(tvOS)
-            DownloadedBadgeOverlay(contentId: item.contentId, padding: badgeInset)
-            #endif
-        }
-        .frame(width: cardWidth, height: cardHeight)
+            // Pins itself bottom-trailing; just needs to span the card.
+            .overlay {
+                #if !os(tvOS)
+                DownloadedBadgeOverlay(contentId: item.contentId, padding: badgeInset)
+                #endif
+            }
+            .clipShape(RoundedRectangle(cornerRadius: ContinuumTheme.cornerRadius))
+            .compositingGroup()
     }
 
     private var isPlayed: Bool {

@@ -11,9 +11,17 @@ import SwiftUI
 ///   the network room to complete before the user reaches the bottom.
 /// - Prefetch: the same callback arms Nuke to fetch posters in the next
 ///   window. The grid itself does not touch the image cache.
-/// - Columns: caller picks `columnCount` (default 6). Drop to 5 when a
-///   side-rail (alphabet jumper etc.) eats horizontal space, or the
-///   fixed `posterCardWidth` cards start overlapping each other.
+/// - Columns: caller picks `columnCount` (default 6), adjusted for the
+///   poster-size preference. Cells take their width from
+///   `containerRelativeFrame`, so a grid that is handed less room than the
+///   full content column — search gives half the screen to the system
+///   keyboard — narrows its cards instead of drawing them past the edge.
+///   Nothing has to measure or be told the available width.
+///
+/// Rows are chunked by hand rather than left to `LazyVGrid` because they are
+/// explicit focus sections: the focus engine resolves d-pad moves
+/// geometrically, and a partially filled grid row has no focusable under most
+/// columns, so a move into a ragged row falls through.
 struct TVCatalogGrid: View {
     let items: [BrowseItem]
     let isLoading: Bool
@@ -21,15 +29,6 @@ struct TVCatalogGrid: View {
     let onItemTap: (String) -> Void
     let onNearEnd: (Int) -> Void
     var columnCount: Int = 6
-    /// Per-card width. Defaults to the theme poster size; shrink when a
-    /// side-rail squeezes the usable width and the default cards would
-    /// overflow their grid cells.
-    var cardWidth: CGFloat = ContinuumTheme.posterCardWidth
-    /// Width the grid actually has to spend, when the caller knows it's less
-    /// than the screen's content column — search hands half the screen to the
-    /// system keyboard. `nil` keeps the full-width assumption, so the count
-    /// comes from `columnCount` and the poster-size preference alone.
-    var availableWidth: CGFloat?
     var prefersDefaultFocusOnFirstItem: Bool = false
     var focusRequest: Int = 0
 
@@ -48,20 +47,13 @@ struct TVCatalogGrid: View {
     /// before the user reaches the bottom.
     private let prefetchRowsRemaining: Int = 8
 
-    /// The poster-size preference picks the count; a caller-supplied width has
-    /// the final say, because cards are a fixed size and a count that doesn't
-    /// fit is drawn past the edge rather than shrunk.
+    /// Columns come from the poster-size preference alone. The cells size
+    /// themselves against whatever width the grid is actually given, so a
+    /// narrower container yields narrower cards rather than an overflowing row.
     private var resolvedColumnCount: Int {
-        let preferred = AdaptiveColumns.tvPosterCount(
+        AdaptiveColumns.tvPosterCount(
             standardCount: columnCount,
             posterSize: uiCustomization.cardPresentation.posterSize
-        )
-        guard let availableWidth else { return preferred }
-        return AdaptiveColumns.tvPosterCountThatFits(
-            preferredCount: preferred,
-            availableWidth: availableWidth,
-            cardWidth: cardWidth,
-            spacing: AdaptiveColumns.tvPosterColumnSpacing
         )
     }
 
@@ -89,7 +81,7 @@ struct TVCatalogGrid: View {
             ForEach(rows) { row in
                 HStack(alignment: .top, spacing: columnSpacing) {
                     ForEach(Array(row.items.enumerated()), id: \.element.id) { offset, item in
-                        TVMediaCard(
+                        MediaCard(
                             title: item.title,
                             posterUrl: item.posterUrl ?? "",
                             thumbhash: item.posterThumbhash,
@@ -98,24 +90,33 @@ struct TVCatalogGrid: View {
                             overlayData: OverlayData.from(item),
                             action: { onItemTap(item.contentId) },
                             playAction: playAction(for: item),
-                            cardWidth: cardWidth,
+                            focusedItemId: $focusedItemId,
+                            contentId: item.contentId,
                             aspect: item.isAudiobook ? .square : .poster,
+                            captionLayout: .gridCentered,
                             prefersDefaultFocus: prefersDefaultFocusOnFirstItem
                                 && row.id == 0 && offset == 0,
-                            defaultFocusNamespace: gridFocusNamespace,
-                            focusBinding: $focusedItemId,
-                            focusContentId: item.contentId,
-                            contentId: item.contentId
+                            defaultFocusNamespace: gridFocusNamespace
                         )
-                        .frame(maxWidth: .infinity)
+                        .containerRelativeFrame(
+                            .horizontal,
+                            count: resolvedColumnCount,
+                            span: 1,
+                            spacing: columnSpacing
+                        )
                         .onAppear { onCellAppear(index: row.id + offset) }
                     }
                     // Keep ragged-row cards in their column positions by
                     // filling the empty slots with equally flexible spacers.
                     ForEach(0..<(resolvedColumnCount - row.items.count), id: \.self) { _ in
                         Color.clear
-                            .frame(maxWidth: .infinity)
                             .frame(height: 1)
+                            .containerRelativeFrame(
+                                .horizontal,
+                                count: resolvedColumnCount,
+                                span: 1,
+                                spacing: columnSpacing
+                            )
                     }
                 }
                 .frame(maxWidth: .infinity)
