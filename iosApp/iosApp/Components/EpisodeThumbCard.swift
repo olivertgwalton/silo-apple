@@ -22,7 +22,6 @@ struct EpisodeThumbCard: View {
 
     @State private var playedOverride: Bool?
     @State private var uiCustomization = UICustomizationPreferences.shared
-    @EnvironmentObject private var overlayStore: OverlayPrefsStore
     /// iOS 26 zoom transition namespace, shared from `MainTabView`. Lets the
     /// tapped thumbnail act as the `.matchedTransitionSource` for the zoom into
     /// the episode's item detail, keyed on `item.contentId`. `nil` (tvOS/macOS
@@ -139,18 +138,6 @@ struct EpisodeThumbCard: View {
                     startPoint: .center,
                     endPoint: .bottom
                 )
-            }
-            // Server / user-customized overlay badges. `wide` variant
-            // gives the bottom corners enough headroom that they don't
-            // collide with the S/E text + progress bar.
-            .overlay {
-                if overlayStore.enabled {
-                    CardOverlays(
-                        data: OverlayData.from(item),
-                        prefs: overlayStore.prefs,
-                        variant: .wide
-                    )
-                }
             }
             // Episode badge overlay (e.g. "S2 · E3")
             .overlay(alignment: .bottomLeading) {

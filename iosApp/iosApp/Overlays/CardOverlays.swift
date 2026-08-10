@@ -2,26 +2,25 @@ import SwiftUI
 
 /// Renders all enabled overlay badges for an item, grouped into the
 /// four corner stacks defined by the user's prefs. Designed to layer
-/// inside a card's existing `ZStack` (over the poster, under any focus
-/// chrome). Adds nothing to layout when no badges are visible.
+/// inside a poster card's existing `ZStack` (over the artwork, under
+/// any focus chrome). Adds nothing to layout when no badges are
+/// visible.
+///
+/// Posters are the only surface that carries these badges: a 16:9
+/// still (episode, resume) already spends its corners on the episode
+/// code, the progress rail, and the watched check, and a detail hero
+/// states the same facts in prose right below the artwork.
 ///
 /// Usage:
 /// ```
 /// ZStack {
 ///     posterImage
-///     CardOverlays(data: .from(item), prefs: prefs, variant: .poster)
+///     CardOverlays(data: .from(item), prefs: prefs)
 /// }
 /// ```
 struct CardOverlays: View {
     let data: OverlayData
     let prefs: CardOverlayPrefs
-    var variant: Variant = .poster
-
-    enum Variant {
-        case poster      // standard 2:3 poster card
-        case wide        // backdrop card (continue watching, hero) — leaves
-                         // headroom for the title block / progress bar.
-    }
 
     var body: some View {
         let preset = OverlayPresets.preset(prefs.preset)
@@ -70,25 +69,16 @@ struct CardOverlays: View {
     }
 
     private func insets(for position: OverlayPosition) -> EdgeInsets {
-        // The `wide` variant leaves more bottom room because a title
-        // block / progress bar typically sits under the image.
-        let bottomInset: CGFloat = {
-            switch variant {
-            case .poster: return 8
-            case .wide:   return 24
-            }
-        }()
-        let sideInset: CGFloat = 8
-        let topInset: CGFloat = 8
+        let inset: CGFloat = 8
         switch position {
         case .topLeft:
-            return EdgeInsets(top: topInset, leading: sideInset, bottom: 0, trailing: 0)
+            return EdgeInsets(top: inset, leading: inset, bottom: 0, trailing: 0)
         case .topRight:
-            return EdgeInsets(top: topInset, leading: 0, bottom: 0, trailing: sideInset)
+            return EdgeInsets(top: inset, leading: 0, bottom: 0, trailing: inset)
         case .bottomLeft:
-            return EdgeInsets(top: 0, leading: sideInset, bottom: bottomInset, trailing: 0)
+            return EdgeInsets(top: 0, leading: inset, bottom: inset, trailing: 0)
         case .bottomRight:
-            return EdgeInsets(top: 0, leading: 0, bottom: bottomInset, trailing: sideInset)
+            return EdgeInsets(top: 0, leading: 0, bottom: inset, trailing: inset)
         }
     }
 }

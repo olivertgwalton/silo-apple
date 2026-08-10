@@ -374,7 +374,7 @@ struct MediaCard: View {
             // affordances always win the same corner if they conflict.
             .overlay {
                 if let overlayData, overlayStore.enabled {
-                    CardOverlays(data: overlayData, prefs: overlayStore.prefs, variant: .poster)
+                    CardOverlays(data: overlayData, prefs: overlayStore.prefs)
                 }
             }
             // Episode badge (e.g. "S2 · E10") for episodes shown as posters,

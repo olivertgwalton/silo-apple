@@ -342,8 +342,7 @@ struct HomePosterCard: View {
             if overlayStore.enabled {
                 CardOverlays(
                     data: OverlayData.from(item),
-                    prefs: overlayStore.prefs,
-                    variant: .poster
+                    prefs: overlayStore.prefs
                 )
                 .frame(width: width, height: height)
                 .clipShape(
@@ -430,7 +429,6 @@ struct HomeStillCard: View {
 
     /// Optimistic watched state, shared with the menu — see `HomePosterCard`.
     @State private var playedOverride: Bool?
-    @EnvironmentObject private var overlayStore: OverlayPrefsStore
 
     private var isPlayed: Bool { playedOverride ?? (item.userState?.played == true) }
 
@@ -487,21 +485,6 @@ struct HomeStillCard: View {
             .frame(height: height * 0.6)
             .frame(maxHeight: .infinity, alignment: .bottom)
             .allowsHitTesting(false)
-
-            if overlayStore.enabled {
-                CardOverlays(
-                    data: OverlayData.from(item),
-                    prefs: overlayStore.prefs,
-                    variant: .wide
-                )
-                .frame(width: width, height: height)
-                .clipShape(
-                    RoundedRectangle(
-                        cornerRadius: HomeFeedMetrics.stillRadius,
-                        style: .continuous
-                    )
-                )
-            }
 
             if let progress = HomeFeedMeta.progress(for: item) {
                 ProgressBar(value: progress)
