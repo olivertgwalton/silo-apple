@@ -54,7 +54,7 @@ enum DetailFacts {
     /// the label follows whichever job the crew actually carries.
     static func writerLabel(for detail: ItemDetail) -> String {
         let hasScreenplay = detail.crew?.contains { $0.job?.lowercased() == "screenplay" } ?? false
-        return hasScreenplay ? "Writer" : "Written by"
+        return hasScreenplay ? "Screenplay" : "Writer"
     }
 
     static func creditNames(in detail: ItemDetail, forJobs jobs: [String]) -> String? {

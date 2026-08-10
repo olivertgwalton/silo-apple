@@ -172,6 +172,11 @@ struct SimilarRail: View {
             items = resolved.map(SimilarPosterItem.init(detail:))
         } catch {
             items = []
+            // `.task(id:)` cancels this load when the view detaches or the id
+            // changes, and cancellation surfaces here as a throw. Releasing
+            // the claim lets the next appearance retry; holding it would hide
+            // the rail for this item until the view is recreated.
+            loadedFor = nil
         }
         isLoading = false
     }

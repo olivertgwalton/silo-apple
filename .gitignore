@@ -60,6 +60,5 @@ output/
 Thumbs.db
 .swiftpm/
 docs/*
-!docs/tvos-focus.md
 !docs/mac-builder.md
 !docs/release/*

@@ -68,7 +68,7 @@ private enum RuntimeConfiguration {
         let fallback = "group.org.siloserver.silo"
         guard let group = Bundle.main.object(
             forInfoDictionaryKey: "ContinuumAppGroup"
-        ) as? String, group.hasPrefix("group.") else {
+        ) as? String, group.hasPrefix("group."), group.count > "group.".count else {
             logger.error("Missing or invalid ContinuumAppGroup Info.plist value; falling back to \(fallback, privacy: .public).")
             return fallback
         }

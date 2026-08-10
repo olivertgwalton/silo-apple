@@ -83,6 +83,10 @@ private struct CastCard: View {
         } label: {
             CastCardLabel(member: member)
         }
+        // A credit with no person page has nowhere to go. Disabling it keeps
+        // it out of the tvOS focus graph and stops VoiceOver announcing an
+        // inert button.
+        .disabled(member.personId == nil)
 
         #if os(tvOS)
         return button.buttonStyle(CastCardStyle())
