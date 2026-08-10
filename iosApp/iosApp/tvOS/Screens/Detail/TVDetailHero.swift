@@ -134,7 +134,7 @@ struct TVDetailHero<Actions: View, BelowSynopsis: View>: View {
                 .padding(.top, eyebrow == nil ? 0 : 4)
             sourceRow
             if let overview, !overview.isEmpty {
-                TVExpandableSynopsis(overview: overview)
+                ExpandableSynopsis(overview: overview)
             }
             belowSynopsis()
             factsRow

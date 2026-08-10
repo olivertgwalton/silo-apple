@@ -602,7 +602,7 @@ private struct PersonPortrait: View {
             Color.continuumSurfaceElevated
 
             if let photoUrl = clean(person.photoUrl) {
-                AsyncImageView(
+                CachedAsyncImage(
                     url: photoUrl,
                     thumbhash: person.photoThumbhash,
                     targetSize: CGSize(width: width, height: height),

@@ -332,7 +332,7 @@ struct MovieDetailContent<BelowOverview: View>: View {
     @ViewBuilder
     private var episodesSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            PhoneSectionHeader(label: episodeRailEyebrow, title: "Episodes")
+            DetailSectionHeader(label: episodeRailEyebrow, title: "Episodes")
                 .padding(.horizontal, ContinuumTheme.safePadding)
 
             PhoneSeasonEpisodeBrowser(
@@ -360,9 +360,9 @@ struct MovieDetailContent<BelowOverview: View>: View {
     @ViewBuilder
     private func castSection(cast: [CastMember]) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            PhoneSectionHeader(title: "Cast & Crew")
+            DetailSectionHeader(title: "Cast & Crew")
                 .padding(.horizontal, ContinuumTheme.safePadding)
-            PhoneCastRail(cast: cast, onTap: onPersonTap)
+            DetailCastRail(cast: cast, onTap: onPersonTap)
         }
     }
 
@@ -378,7 +378,7 @@ struct MovieDetailContent<BelowOverview: View>: View {
     private var similarSection: some View {
         // Header lives inside the rail so it disappears with the cards when
         // recommendations are disabled or empty.
-        PhoneSimilarRail(
+        SimilarRail(
             contentId: detail.contentId,
             onSelect: onNavigateToItem
         )
@@ -388,7 +388,7 @@ struct MovieDetailContent<BelowOverview: View>: View {
 
     private var detailsSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            PhoneSectionHeader(title: "Details")
+            DetailSectionHeader(title: "Details")
             DetailFactsSection(detail: detail)
         }
     }

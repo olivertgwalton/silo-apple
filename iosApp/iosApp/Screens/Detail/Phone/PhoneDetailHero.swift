@@ -29,7 +29,6 @@ struct PhoneDetailHero<Actions: View, BelowOverview: View>: View {
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var availableWidth: CGFloat = 0
-    @State private var showFullOverview = false
 
     private let expandedLayoutBreakpoint: CGFloat = 640
 
@@ -107,7 +106,7 @@ struct PhoneDetailHero<Actions: View, BelowOverview: View>: View {
     @ViewBuilder
     private var poster: some View {
         if let posterUrl, !posterUrl.isEmpty {
-            AsyncImageView(
+            CachedAsyncImage(
                 url: posterUrl,
                 thumbhash: posterThumbhash,
                 targetSize: CGSize(width: posterWidth, height: posterHeight),
@@ -124,7 +123,7 @@ struct PhoneDetailHero<Actions: View, BelowOverview: View>: View {
         ZStack {
             Group {
                 if let url = backdropUrl, !url.isEmpty {
-                    AsyncImageView(
+                    CachedAsyncImage(
                         url: url,
                         thumbhash: backdropThumbhash,
                         contentMode: .fill
@@ -157,15 +156,6 @@ struct PhoneDetailHero<Actions: View, BelowOverview: View>: View {
                 startPoint: .top,
                 endPoint: .bottom
             )
-
-            if let overlayData, overlayStore.enabled {
-                CardOverlays(
-                    data: overlayData,
-                    prefs: overlayStore.prefs,
-                    variant: .hero
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
         }
         .backgroundExtensionEffect()
         .allowsHitTesting(false)
@@ -206,7 +196,7 @@ struct PhoneDetailHero<Actions: View, BelowOverview: View>: View {
     private var backdrop: some View {
         Group {
             if let url = backdropUrl, !url.isEmpty {
-                AsyncImageView(url: url, thumbhash: backdropThumbhash, contentMode: .fill)
+                CachedAsyncImage(url: url, thumbhash: backdropThumbhash, contentMode: .fill)
             } else {
                 Color.continuumSurface
             }
@@ -268,7 +258,7 @@ struct PhoneDetailHero<Actions: View, BelowOverview: View>: View {
                 textAlignment: textAlignment
             )
         } else if let logoUrl, !logoUrl.isEmpty {
-            AsyncImageView(url: logoUrl, contentMode: .fit, placeholderStyle: .clear)
+            CachedAsyncImage(url: logoUrl, contentMode: .fit, placeholderStyle: .clear)
                 .frame(
                     width: textAlignment == .leading ? expandedLogoWidth : nil,
                     height: logoHeight
@@ -342,56 +332,14 @@ struct PhoneDetailHero<Actions: View, BelowOverview: View>: View {
         textAlignment == .leading ? .leading : .center
     }
 
-    // MARK: - Overview with inline MORE pill
+    // MARK: - Overview
 
     @ViewBuilder
     private var overviewBlock: some View {
         if let overview, !overview.isEmpty {
-            VStack(spacing: 0) {
-                Text(overview)
-                    .font(.system(size: 15, weight: .regular))
-                    .foregroundColor(.continuumOnSurface.opacity(0.78))
-                    .lineSpacing(3)
-                    .lineLimit(showFullOverview ? nil : 3)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .overlay(alignment: .bottomTrailing) {
-                        if !showFullOverview, isOverviewClipped {
-                            morePill
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        withAnimation(.easeInOut(duration: ContinuumTheme.normalDuration)) {
-                            showFullOverview.toggle()
-                        }
-                    }
-            }
-            .padding(.top, 8)
+            ExpandableSynopsis(overview: overview)
+                .padding(.top, 8)
         }
-    }
-
-    private var morePill: some View {
-        Button {
-            withAnimation(.easeInOut(duration: ContinuumTheme.normalDuration)) {
-                showFullOverview = true
-            }
-        } label: {
-            Text("MORE")
-                .font(.system(size: 11, weight: .heavy))
-                .tracking(0.6)
-                .foregroundColor(.continuumOnSurface)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(
-                    Capsule().fill(Color.continuumSurfaceElevated)
-                )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var isOverviewClipped: Bool {
-        (overview?.count ?? 0) > 140
     }
 
     // MARK: - Facts row

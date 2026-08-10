@@ -567,7 +567,7 @@ private struct LibraryCollectionCard: View {
     @ViewBuilder
     private var poster: some View {
         if let posterUrl = collection.posterUrl, !posterUrl.isEmpty {
-            AsyncImageView(
+            CachedAsyncImage(
                 url: posterUrl,
                 thumbhash: collection.posterThumbhash,
                 targetSize: CGSize(width: cardWidth, height: cardHeight),

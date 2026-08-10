@@ -505,7 +505,7 @@ private struct PhonePlaybackSelectorSheet: View {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.continuumHeadline)
                         .foregroundColor(.continuumOnSurface)
                         .lineLimit(2)
                     if let detail, !detail.isEmpty {

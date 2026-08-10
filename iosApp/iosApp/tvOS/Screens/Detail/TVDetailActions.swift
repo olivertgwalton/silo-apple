@@ -58,7 +58,7 @@ struct TVSecondaryPillButton: View {
         Button(action: action) {
             HStack(spacing: 16) {
                 Image(systemName: icon)
-                    .font(.system(size: 28, weight: .semibold))
+                    .font(.continuumSubheadline)
                 Text(title)
                     .font(.system(size: 26, weight: .semibold))
                     .lineLimit(1)
@@ -124,7 +124,7 @@ struct TVCircleMenuButton<MenuContent: View>: View {
             menu()
         } label: {
             Image(systemName: icon)
-                .font(.system(size: 28, weight: .semibold))
+                .font(.continuumSubheadline)
                 .contentTransition(.symbolEffect(.replace))
         }
         .menuStyle(.button)
@@ -167,7 +167,7 @@ struct TVCircleActionButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: resolvedIcon)
-                .font(.system(size: 28, weight: .semibold))
+                .font(.continuumSubheadline)
                 .contentTransition(.symbolEffect(.replace))
         }
         .buttonStyle(TVCircleButtonStyle())

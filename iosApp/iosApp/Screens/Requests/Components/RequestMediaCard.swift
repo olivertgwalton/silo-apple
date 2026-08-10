@@ -90,7 +90,7 @@ struct RequestMediaCard: View {
     private var posterImage: some View {
         ZStack(alignment: .topTrailing) {
             if let url = RequestImageURL.build(posterPath, size: .poster) {
-                AsyncImageView(
+                CachedAsyncImage(
                     url: url,
                     targetSize: CGSize(width: width, height: height),
                     contentMode: .fill

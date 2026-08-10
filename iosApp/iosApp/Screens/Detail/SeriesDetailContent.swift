@@ -299,7 +299,7 @@ struct SeriesDetailContent<BelowOverview: View>: View {
     private var similarSection: some View {
         // Header lives inside the rail so it disappears with the cards when
         // recommendations are disabled or empty.
-        PhoneSimilarRail(
+        SimilarRail(
             contentId: detail.contentId,
             onSelect: onNavigateToItem
         )
@@ -310,7 +310,7 @@ struct SeriesDetailContent<BelowOverview: View>: View {
     @ViewBuilder
     private var episodesSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            PhoneSectionHeader(
+            DetailSectionHeader(
                 label: selectedSeason.map { "Season \($0.seasonNumber)" } ?? "Episodes",
                 title: "Episodes",
                 trailingText: episodeCountSubtitle
@@ -339,9 +339,9 @@ struct SeriesDetailContent<BelowOverview: View>: View {
     @ViewBuilder
     private func castSection(cast: [CastMember]) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            PhoneSectionHeader(title: "Cast & Crew")
+            DetailSectionHeader(title: "Cast & Crew")
                 .padding(.horizontal, ContinuumTheme.safePadding)
-            PhoneCastRail(cast: cast, onTap: onPersonTap)
+            DetailCastRail(cast: cast, onTap: onPersonTap)
         }
     }
 
@@ -349,7 +349,7 @@ struct SeriesDetailContent<BelowOverview: View>: View {
 
     private var detailsSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            PhoneSectionHeader(title: "Details")
+            DetailSectionHeader(title: "Details")
             DetailFactsSection(detail: detail)
         }
     }

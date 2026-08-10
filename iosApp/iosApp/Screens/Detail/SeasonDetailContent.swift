@@ -229,7 +229,7 @@ struct SeasonDetailContent<BelowOverview: View>: View {
     @ViewBuilder
     private var episodesSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            PhoneSectionHeader(label: "This Season", title: "Episodes")
+            DetailSectionHeader(label: "This Season", title: "Episodes")
                 .padding(.horizontal, ContinuumTheme.safePadding)
 
             PhoneSeasonEpisodeBrowser(
@@ -248,15 +248,15 @@ struct SeasonDetailContent<BelowOverview: View>: View {
     @ViewBuilder
     private func castSection(cast: [CastMember]) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            PhoneSectionHeader(title: "Cast & Crew")
+            DetailSectionHeader(title: "Cast & Crew")
                 .padding(.horizontal, ContinuumTheme.safePadding)
-            PhoneCastRail(cast: cast, onTap: onPersonTap)
+            DetailCastRail(cast: cast, onTap: onPersonTap)
         }
     }
 
     private var detailsSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            PhoneSectionHeader(title: "Details")
+            DetailSectionHeader(title: "Details")
             DetailFactsSection(detail: detail)
         }
     }

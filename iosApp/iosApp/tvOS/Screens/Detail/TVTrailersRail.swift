@@ -12,14 +12,14 @@ import UIKit
 /// which also owns the YouTube-app availability probe that decides whether
 /// remote cards exist at all. The section header lives in here (not the
 /// parent) so an item with neither trailers nor extras shows nothing at
-/// all rather than an orphaned title — the same arrangement `TVSimilarRail`
+/// all rather than an orphaned title — the same arrangement `SimilarRail`
 /// uses.
 ///
 /// Focus follows the other detail rails exactly: one `.focusSection()`
 /// around the scroll view, plus a `defaultFocus` that lands d-pad entry on
 /// the first card instead of the geometrically-nearest middle one — the
-/// same mechanism and `.userInitiated` priority as `TVSimilarRail` and
-/// `TVDetailCastRail`. That priority only governs entry *into* this
+/// same mechanism and `.userInitiated` priority as `SimilarRail` and
+/// `DetailCastRail`. That priority only governs entry *into* this
 /// section; the hero's Play button keeps page-entry focus through its own
 /// `defaultFocus` on the detail scroll container.
 struct TVTrailersRail: View {
@@ -37,7 +37,7 @@ struct TVTrailersRail: View {
     var body: some View {
         if !entries.isEmpty {
             VStack(alignment: .leading, spacing: headerSpacing) {
-                TVSectionHeader(title: "Trailers & More")
+                DetailSectionHeader(title: "Trailers & More")
                 rail
             }
         }
@@ -66,7 +66,7 @@ struct TVTrailersRail: View {
 private extension View {
     /// `.userInitiated` priority is what makes `defaultFocus` win over
     /// geometric proximity on d-pad entry — the same helper shape as
-    /// `TVSimilarRail.applySimilarRailDefaultFocus`. No-op on an empty rail
+    /// `SimilarRail.applyRailDefaultFocus`. No-op on an empty rail
     /// (first id is nil).
     @ViewBuilder
     func applyTrailerRailDefaultFocus(

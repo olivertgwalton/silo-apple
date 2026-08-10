@@ -22,7 +22,7 @@ struct PhoneRefinedPlayButton: View {
                 Image(systemName: icon)
                     .font(.system(size: 15, weight: .bold))
                 Text(title)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.continuumHeadline)
                     .lineLimit(1)
             }
             .foregroundStyle(.black)

@@ -33,7 +33,7 @@ struct PhoneEpisodeListRow: View {
 
     private var thumbnail: some View {
         ZStack(alignment: .bottom) {
-            AsyncImageView(
+            CachedAsyncImage(
                 url: episode.stillUrl ?? "",
                 thumbhash: episode.stillThumbhash,
                 targetSize: CGSize(width: thumbnailWidth, height: thumbnailHeight),

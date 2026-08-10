@@ -323,7 +323,7 @@ struct MediaCard: View {
 
     private var posterImage: some View {
         ZStack(alignment: .bottom) {
-            AsyncImageView(
+            CachedAsyncImage(
                 url: posterUrl,
                 thumbhash: thumbhash,
                 targetSize: CGSize(width: cardWidth, height: cardHeight),

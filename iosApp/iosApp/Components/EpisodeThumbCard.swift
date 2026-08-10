@@ -130,7 +130,7 @@ struct EpisodeThumbCard: View {
 
     private var thumbnail: some View {
         ZStack(alignment: .bottomLeading) {
-            AsyncImageView(
+            CachedAsyncImage(
                 url: imageUrl,
                 thumbhash: item.backdropThumbhash ?? item.posterThumbhash,
                 targetSize: CGSize(width: cardWidth, height: cardHeight),

@@ -259,7 +259,7 @@ private struct EpisodeCardLabel: View {
 
                         if let overview = episode.overview, !overview.isEmpty {
                             Text(overview)
-                                .font(.system(size: 20, weight: .regular))
+                                .font(.continuumSmall)
                                 .foregroundStyle(Color.continuumSecondaryText)
                                 .lineLimit(3, reservesSpace: true)
                                 .lineSpacing(3)

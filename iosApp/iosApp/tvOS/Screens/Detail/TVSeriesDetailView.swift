@@ -329,18 +329,16 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
     }
 
     private var episodeSectionHeader: some View {
-        HStack(alignment: .firstTextBaseline) {
-            TVSectionHeader(
-                label: selectedSeason.map { "Season \($0.seasonNumber)" } ?? "Episodes",
-                title: "Episodes"
-            )
-            Spacer()
-            if let count = selectedSeason?.episodeCount, count > 0 {
-                Text("\(count) episode\(count == 1 ? "" : "s")")
-                    .font(.system(size: 22, weight: .medium))
-                    .foregroundColor(.continuumSecondaryText)
-            }
-        }
+        DetailSectionHeader(
+            label: selectedSeason.map { "Season \($0.seasonNumber)" } ?? "Episodes",
+            title: "Episodes",
+            trailingText: episodeCountSubtitle
+        )
+    }
+
+    private var episodeCountSubtitle: String? {
+        guard let count = selectedSeason?.episodeCount, count > 0 else { return nil }
+        return "\(count) episode\(count == 1 ? "" : "s")"
     }
 
     private var seasonRow: some View {
@@ -366,7 +364,7 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
             }
         } else if episodes.isEmpty {
             Text("No episodes available")
-                .font(.system(size: 22, weight: .regular))
+                .font(.continuumCaption)
                 .foregroundColor(.continuumSecondaryText)
         } else {
             TVEpisodeRail(
@@ -388,7 +386,7 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
     private var similarSection: some View {
         // Header lives inside the rail so it disappears with the cards when
         // recommendations are disabled or empty.
-        TVSimilarRail(
+        SimilarRail(
             contentId: detail.contentId,
             onSelect: onNavigateToItem
         )
@@ -407,8 +405,8 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
     @ViewBuilder
     private func castSection(cast: [CastMember]) -> some View {
         VStack(alignment: .leading, spacing: 28) {
-            TVSectionHeader(title: "Cast & Crew")
-            TVDetailCastRail(cast: cast, onTap: onPersonTap)
+            DetailSectionHeader(title: "Cast & Crew")
+            DetailCastRail(cast: cast, onTap: onPersonTap)
         }
     }
 
@@ -416,7 +414,7 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
 
     private var detailsSection: some View {
         VStack(alignment: .leading, spacing: 28) {
-            TVSectionHeader(title: "Details")
+            DetailSectionHeader(title: "Details")
             DetailFactsSection(detail: detail, metrics: .television)
         }
     }

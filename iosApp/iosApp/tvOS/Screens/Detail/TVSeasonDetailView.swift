@@ -289,7 +289,7 @@ struct TVSeasonDetailView<BelowSynopsis: View>: View {
     @ViewBuilder
     private var episodeSection: some View {
         VStack(alignment: .leading, spacing: 28) {
-            TVSectionHeader(label: "This Season", title: "Episodes")
+            DetailSectionHeader(label: "This Season", title: "Episodes")
             if seasons.count > 1 {
                 TVSeasonChipRow(
                     seasons: seasons,
@@ -308,7 +308,7 @@ struct TVSeasonDetailView<BelowSynopsis: View>: View {
                 }
             } else if episodes.isEmpty {
                 Text("No episodes available")
-                    .font(.system(size: 22, weight: .regular))
+                    .font(.continuumCaption)
                     .foregroundColor(.continuumSecondaryText)
             } else {
                 TVEpisodeRail(
@@ -331,8 +331,8 @@ struct TVSeasonDetailView<BelowSynopsis: View>: View {
     @ViewBuilder
     private func castSection(cast: [CastMember]) -> some View {
         VStack(alignment: .leading, spacing: 28) {
-            TVSectionHeader(title: "Cast & Crew")
-            TVDetailCastRail(cast: cast, onTap: onPersonTap)
+            DetailSectionHeader(title: "Cast & Crew")
+            DetailCastRail(cast: cast, onTap: onPersonTap)
         }
     }
 
@@ -340,7 +340,7 @@ struct TVSeasonDetailView<BelowSynopsis: View>: View {
 
     private var detailsSection: some View {
         VStack(alignment: .leading, spacing: 28) {
-            TVSectionHeader(title: "Details")
+            DetailSectionHeader(title: "Details")
             DetailFactsSection(detail: detail, metrics: .television)
         }
     }

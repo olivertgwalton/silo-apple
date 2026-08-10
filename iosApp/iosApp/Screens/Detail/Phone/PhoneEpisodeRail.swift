@@ -98,7 +98,7 @@ private struct PhoneEpisodeCard: View {
 
                             if let overview = episode.overview, !overview.isEmpty {
                                 Text(overview)
-                                    .font(.system(size: 12, weight: .regular))
+                                    .font(.continuumCaption)
                                     .foregroundStyle(Color.continuumSecondaryText)
                                     .lineLimit(3, reservesSpace: true)
                                     .lineSpacing(2)
@@ -136,7 +136,7 @@ private struct PhoneEpisodeCard: View {
 
     private var still: some View {
         ZStack(alignment: .bottom) {
-            AsyncImageView(
+            CachedAsyncImage(
                 url: episode.stillUrl ?? "",
                 thumbhash: episode.stillThumbhash,
                 contentMode: .fill

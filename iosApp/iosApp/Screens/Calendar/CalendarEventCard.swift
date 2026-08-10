@@ -72,7 +72,7 @@ struct CalendarEventCard: View {
 
     private var posterImage: some View {
         ZStack {
-            AsyncImageView(
+            CachedAsyncImage(
                 url: event.posterUrl ?? "",
                 thumbhash: event.posterThumbhash,
                 targetSize: CGSize(width: cardWidth, height: cardHeight),

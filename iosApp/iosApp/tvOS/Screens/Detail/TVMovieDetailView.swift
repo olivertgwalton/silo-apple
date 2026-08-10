@@ -298,7 +298,7 @@ struct TVMovieDetailView<BelowSynopsis: View>: View {
     @ViewBuilder
     private var episodesSection: some View {
         VStack(alignment: .leading, spacing: 28) {
-            TVSectionHeader(label: episodeRailEyebrow, title: "Episodes")
+            DetailSectionHeader(label: episodeRailEyebrow, title: "Episodes")
             if seasons.count > 1 {
                 TVSeasonChipRow(
                     seasons: seasons,
@@ -371,7 +371,7 @@ struct TVMovieDetailView<BelowSynopsis: View>: View {
     private var similarSection: some View {
         // Header lives inside the rail so it disappears with the cards when
         // recommendations are disabled or empty.
-        TVSimilarRail(
+        SimilarRail(
             contentId: detail.contentId,
             onSelect: onNavigateToItem
         )
@@ -390,8 +390,8 @@ struct TVMovieDetailView<BelowSynopsis: View>: View {
     @ViewBuilder
     private func castSection(cast: [CastMember]) -> some View {
         VStack(alignment: .leading, spacing: 28) {
-            TVSectionHeader(title: "Cast & Crew")
-            TVDetailCastRail(cast: cast, onTap: onPersonTap)
+            DetailSectionHeader(title: "Cast & Crew")
+            DetailCastRail(cast: cast, onTap: onPersonTap)
         }
     }
 
@@ -399,7 +399,7 @@ struct TVMovieDetailView<BelowSynopsis: View>: View {
 
     private var detailsSection: some View {
         VStack(alignment: .leading, spacing: 28) {
-            TVSectionHeader(title: "Details")
+            DetailSectionHeader(title: "Details")
             DetailFactsSection(detail: detail, metrics: .television)
         }
     }

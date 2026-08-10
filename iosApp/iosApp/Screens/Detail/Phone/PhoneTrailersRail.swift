@@ -7,7 +7,7 @@ import SwiftUI
 /// already loaded (`TrailerRail.entries` owns the merge and filter rules)
 /// and every tap is handed straight back to the caller. The section header
 /// lives in here so an item with no trailers renders nothing at all rather
-/// than an orphaned title — the same reason `PhoneSimilarRail` owns its
+/// than an orphaned title — the same reason `SimilarRail` owns its
 /// header.
 struct PhoneTrailersRail: View {
     let entries: [TrailerRailEntry]
@@ -23,7 +23,7 @@ struct PhoneTrailersRail: View {
     var body: some View {
         if !entries.isEmpty {
             VStack(alignment: .leading, spacing: 14) {
-                PhoneSectionHeader(title: "Trailers & More")
+                DetailSectionHeader(title: "Trailers & More")
                     .padding(.horizontal, ContinuumTheme.safePadding)
                 rail
             }
@@ -167,7 +167,7 @@ private struct PhoneTrailerCard: View {
         if let thumbnailURL {
             // YouTube's `hqdefault` still is 4:3 with letterbox bars; a
             // fill-mode crop to 16:9 removes them almost exactly.
-            AsyncImageView(
+            CachedAsyncImage(
                 url: thumbnailURL.absoluteString,
                 targetSize: CGSize(width: cardWidth, height: thumbnailHeight),
                 contentMode: .fill

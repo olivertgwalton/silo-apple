@@ -66,7 +66,7 @@ struct PhoneCircleActionButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: resolvedIcon)
-                .font(.system(size: 16, weight: .semibold))
+                .font(.continuumHeadline)
                 .foregroundColor(.white)
                 .frame(width: 44, height: 44)
                 .background(
@@ -110,7 +110,7 @@ struct PhoneCircleMenuButton<MenuContent: View>: View {
             menu()
         } label: {
             Image(systemName: icon)
-                .font(.system(size: 16, weight: .semibold))
+                .font(.continuumHeadline)
                 .foregroundColor(.white)
                 .frame(width: 44, height: 44)
                 .background(
