@@ -84,10 +84,8 @@ struct HomeFeedRow: View {
     /// caption with the series name, so without this several episodes of one
     /// series render as identical cards.
     private func episodeBadge(for item: SectionItem) -> String? {
-        guard item.type.lowercased() == "episode",
-              let season = item.seasonNumber,
-              let episode = item.episodeNumber else { return nil }
-        return "S\(season) · E\(episode)"
+        guard item.type.lowercased() == "episode" else { return nil }
+        return EpisodeCode.format(season: item.seasonNumber, episode: item.episodeNumber)
     }
 
     /// Removal is only offered where it means something — a resume row.

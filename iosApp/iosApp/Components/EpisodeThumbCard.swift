@@ -229,10 +229,7 @@ struct EpisodeThumbCard: View {
 
     /// "S1 · E4" badge if we have season+episode numbers.
     private var episodeBadge: String? {
-        if let season = item.seasonNumber, let episode = item.episodeNumber {
-            return "S\(season) · E\(episode)"
-        }
-        return nil
+        EpisodeCode.format(season: item.seasonNumber, episode: item.episodeNumber)
     }
 
     private var progressValue: Double? {

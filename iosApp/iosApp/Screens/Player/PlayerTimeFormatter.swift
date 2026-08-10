@@ -30,6 +30,14 @@ enum PlayerTimeFormatter {
         return "\(m)m"
     }
 
+    /// The same label from a runtime in whole minutes, which is how the
+    /// catalog reports it. `nil` for zero/unknown so callers can drop the
+    /// segment rather than render an empty one.
+    static func formatRuntime(minutes: Int?) -> String? {
+        guard let minutes, minutes > 0 else { return nil }
+        return formatRuntime(Double(minutes) * 60)
+    }
+
     /// `m:ss` for the sleep-timer countdown in the status column.
     static func formatCountdown(_ seconds: Int) -> String {
         let m = seconds / 60, s = seconds % 60

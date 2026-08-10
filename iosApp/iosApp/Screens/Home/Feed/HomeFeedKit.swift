@@ -17,8 +17,6 @@ enum HomeFeedMetrics {
     /// Wider than today's 120pt. At 120 the cards read as thumbnails against
     /// 24pt row gaps; the screen ends up feeling sparse rather than spacious.
     static let posterWidth: CGFloat = 132
-    /// Poster Wall trades size for count.
-    static let densePosterWidth: CGFloat = 104
     /// 16:9 still used by resume rows. Tuned so a still row shows the same
     /// "two cards plus a peek" as a poster row — at 210 the stills were
     /// noticeably less dense than the 132pt posters directly below them, which
@@ -56,20 +54,12 @@ enum HomeFeed {
 // MARK: - Metadata formatting
 
 enum HomeFeedMeta {
-    static func runtime(minutes: Int?) -> String? {
-        guard let minutes, minutes > 0 else { return nil }
-        let hours = minutes / 60
-        let remainder = minutes % 60
-        if hours > 0, remainder > 0 { return "\(hours)h \(remainder)m" }
-        if hours > 0 { return "\(hours)h" }
-        return "\(remainder)m"
-    }
 
     static func remaining(position: Double?, duration: Double?) -> String? {
         guard let position, let duration, duration > 0, position > 0 else { return nil }
         let minutesLeft = Int((duration - position) / 60)
         guard minutesLeft > 0 else { return nil }
-        return runtime(minutes: minutesLeft).map { "\($0) left" }
+        return PlayerTimeFormatter.formatRuntime(minutes: minutesLeft).map { "\($0) left" }
     }
 
     static func progress(for item: SectionItem) -> Double? {
@@ -80,8 +70,11 @@ enum HomeFeedMeta {
     }
 
     static func episodeCode(for item: SectionItem) -> String? {
-        guard let season = item.seasonNumber, let episode = item.episodeNumber else { return nil }
-        return "S\(season) E\(episode)"
+        EpisodeCode.format(
+            season: item.seasonNumber,
+            episode: item.episodeNumber,
+            style: .compact
+        )
     }
 
     /// Caption under a resume still — "S2 E4  ·  23m left".

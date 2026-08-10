@@ -274,10 +274,8 @@ struct MediaRow: View {
     /// "S2 · E10" badge for an episode rendered as a poster, so new episodes
     /// of the same series stay distinguishable. `nil` for non-episodes.
     private func episodeBadge(for item: SectionItem) -> String? {
-        guard item.type.lowercased() == "episode",
-              let season = item.seasonNumber,
-              let episode = item.episodeNumber else { return nil }
-        return "S\(season) · E\(episode)"
+        guard item.type.lowercased() == "episode" else { return nil }
+        return EpisodeCode.format(season: item.seasonNumber, episode: item.episodeNumber)
     }
 
     // MARK: - Metrics
