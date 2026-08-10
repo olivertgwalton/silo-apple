@@ -119,6 +119,50 @@ extension View {
         #endif
     }
 
+    /// Marks a tvOS focus region. No-op elsewhere, so cross-platform screens
+    /// can express focus grouping without carrying a `#if` for it.
+    @ViewBuilder
+    func continuumFocusSection() -> some View {
+        #if os(tvOS)
+        self.focusSection()
+        #else
+        self
+        #endif
+    }
+
+    /// Page background for a screen the system presents inside its own
+    /// container. tvOS puts `.searchable` content beside the keyboard panel on
+    /// a translucent backdrop that runs the full screen; painting an opaque
+    /// fill there cuts a hard-edged slab out of it. iOS and macOS own their
+    /// whole window, so they get the standard fill.
+    @ViewBuilder
+    func continuumSearchBackground() -> some View {
+        #if os(tvOS)
+        self
+        #else
+        self.continuumBackground()
+        #endif
+    }
+
+    /// Puts the cursor in the search field as the screen appears. tvOS drives
+    /// focus through its own search keyboard, so it opts out rather than
+    /// fighting the focus engine for the first responder.
+    @ViewBuilder
+    func continuumSearchFieldAutofocus(_ isFocused: FocusState<Bool>.Binding) -> some View {
+        #if os(tvOS)
+        self
+        #else
+        self
+            .searchFocused(isFocused)
+            .task {
+                // One turn of the runloop: the field isn't installed yet on the
+                // update that presents it.
+                await Task.yield()
+                isFocused.wrappedValue = true
+            }
+        #endif
+    }
+
     @ViewBuilder
     func continuumGroupedListStyle() -> some View {
         #if os(tvOS)
