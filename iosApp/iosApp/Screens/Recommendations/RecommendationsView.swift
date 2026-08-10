@@ -265,11 +265,6 @@ private struct SavedShortcutsRow: View {
         #if os(tvOS)
         .focusScope(focusScope)
         .focusSection()
-        .onMoveCommand { direction in
-            if direction == .up {
-                onMoveUp?()
-            }
-        }
         // Imperative hand-down from the top menu: prefersDefaultFocus only
         // fires when the engine ENTERS this scope, which doesn't happen when
         // the For You root is swapped in beneath a remote sitting in the menu.

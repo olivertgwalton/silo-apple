@@ -70,12 +70,12 @@ struct TVBrowseControlRow: View {
     }
 
 
+    /// Down only. The grid below is reached by the engine, but the page
+    /// scrolls it into view, so the parent still needs the signal. Up needs
+    /// nothing — the bar is a normal focus region again.
     private func handleVerticalExit(_ direction: MoveCommandDirection) {
-        switch direction {
-        case .up: onMoveUp?()
-        case .down: onMoveDown?()
-        default: break
-        }
+        guard direction == .down else { return }
+        onMoveDown?()
     }
 }
 
