@@ -83,6 +83,7 @@ struct TVCatalogGrid: View {
                         TVMediaCard(
                             title: item.title,
                             posterUrl: item.posterUrl ?? "",
+                            thumbhash: item.posterThumbhash,
                             year: item.year,
                             userState: item.userState,
                             overlayData: OverlayData.from(item),
