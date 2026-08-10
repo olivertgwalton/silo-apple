@@ -30,6 +30,72 @@ extension Font {
     /// Numeric displays like PINs (64pt monospaced bold)
     static let continuumPIN = Font.system(size: 64, weight: .bold, design: .monospaced)
 
+    /// Tracked all-caps eyebrow above a detail-page section title.
+    static let continuumSectionEyebrow = Font.system(size: 20, weight: .bold)
+
+    /// Detail-page section title — "Episodes", "Cast & Crew".
+    static let continuumSectionTitle = Font.system(size: 42, weight: .semibold)
+
+    /// Right-aligned count/context beside a section title.
+    static let continuumSectionTrailing = Font.system(size: 22, weight: .medium)
+
+    /// Actor name on a cast-rail portrait.
+    static let continuumCastName = Font.system(size: 22, weight: .semibold)
+
+    /// Character name under an actor on a cast-rail portrait.
+    static let continuumCastRole = Font.system(size: 18, weight: .regular)
+
+    /// Detail-hero synopsis body.
+    static let continuumSynopsis = Font.system(size: 26, weight: .regular)
+
+    #elseif os(macOS)
+
+    // A Mac is read at desk distance, so body copy stays near the iOS sizes.
+    // The display sizes grow instead: a 36pt hero that anchors a phone screen
+    // is lost on a window three times as wide.
+
+    /// Hero title overlaid on backdrop (44pt bold, tight tracking)
+    static let continuumHeroTitle = Font.system(size: 44, weight: .bold).leading(.tight)
+
+    /// Large screen titles — "Discover", "TV Shows" (22pt bold)
+    static let continuumTitle = Font.system(size: 22, weight: .bold)
+
+    /// Section headlines — "Continue Watching" (18pt semibold)
+    static let continuumHeadline = Font.system(size: 18, weight: .semibold)
+
+    /// Card titles and subheadlines (15pt semibold)
+    static let continuumSubheadline = Font.system(size: 15, weight: .semibold)
+
+    /// Body text — descriptions, synopses (14pt regular)
+    static let continuumBody = Font.system(size: 14)
+
+    /// Captions and metadata (12pt regular)
+    static let continuumCaption = Font.system(size: 12, weight: .regular)
+
+    /// Smallest text — badges, episode numbers, tab labels (11pt regular)
+    static let continuumSmall = Font.system(size: 11, weight: .regular)
+
+    /// Numeric displays like PINs (40pt monospaced bold)
+    static let continuumPIN = Font.system(size: 40, weight: .bold, design: .monospaced)
+
+    /// Tracked all-caps eyebrow above a detail-page section title.
+    static let continuumSectionEyebrow = Font.system(size: 12, weight: .bold)
+
+    /// Detail-page section title — "Episodes", "Cast & Crew".
+    static let continuumSectionTitle = Font.system(size: 26, weight: .semibold)
+
+    /// Right-aligned count/context beside a section title.
+    static let continuumSectionTrailing = Font.system(size: 13, weight: .medium)
+
+    /// Actor name on a cast-rail portrait.
+    static let continuumCastName = Font.system(size: 13, weight: .semibold)
+
+    /// Character name under an actor on a cast-rail portrait.
+    static let continuumCastRole = Font.system(size: 12, weight: .regular)
+
+    /// Detail-hero synopsis body.
+    static let continuumSynopsis = Font.system(size: 15, weight: .regular)
+
     #else
 
     /// Hero title overlaid on backdrop (36pt bold, tight tracking)
@@ -55,6 +121,24 @@ extension Font {
 
     /// Numeric displays like PINs (32pt monospaced bold)
     static let continuumPIN = Font.system(size: 32, weight: .bold, design: .monospaced)
+
+    /// Tracked all-caps eyebrow above a detail-page section title.
+    static let continuumSectionEyebrow = Font.system(size: 11, weight: .bold)
+
+    /// Detail-page section title — "Episodes", "Cast & Crew".
+    static let continuumSectionTitle = Font.system(size: 22, weight: .semibold)
+
+    /// Right-aligned count/context beside a section title.
+    static let continuumSectionTrailing = Font.system(size: 13, weight: .medium)
+
+    /// Actor name on a cast-rail portrait.
+    static let continuumCastName = Font.system(size: 12, weight: .semibold)
+
+    /// Character name under an actor on a cast-rail portrait.
+    static let continuumCastRole = Font.system(size: 11, weight: .regular)
+
+    /// Detail-hero synopsis body.
+    static let continuumSynopsis = Font.system(size: 15, weight: .regular)
 
     #endif
 }

@@ -1,7 +1,12 @@
 import SwiftUI
 
 /// Central design token repository matching Plezy's mono theme.
-/// On tvOS, spacing/radius tokens are scaled up to match 10-foot viewing distance.
+///
+/// Every metric below forks three ways, because the three platforms are read
+/// from three distances: a phone at arm's length, a Mac at desk distance with
+/// a pointer, and an Apple TV across a room. Keeping the fork here — rather
+/// than at call sites — is what lets one view render correctly on all three;
+/// see `Font.continuum*` for the typographic half of the same contract.
 struct ContinuumTheme {
 
     // MARK: - Platform scale
@@ -9,6 +14,11 @@ struct ContinuumTheme {
     #if os(tvOS)
     /// Uniform scale applied to tvOS — everything is ~2x bigger than iOS.
     static let scale: CGFloat = 2.0
+    #elseif os(macOS)
+    /// Desk-distance viewing sits between a phone and a TV. Artwork and
+    /// spacing get a modest bump; type does not (the Mac renders text at the
+    /// same physical size as a phone held closer).
+    static let scale: CGFloat = 1.25
     #else
     static let scale: CGFloat = 1.0
     #endif
@@ -22,6 +32,11 @@ struct ContinuumTheme {
     static let smallCornerRadius: CGFloat = 8
     /// Card container radius
     static let cardCornerRadius: CGFloat = 18
+    #elseif os(macOS)
+    /// Slightly softer than the phone radii to match the larger artwork.
+    static let cornerRadius: CGFloat = 10
+    static let smallCornerRadius: CGFloat = 7
+    static let cardCornerRadius: CGFloat = 16
     #else
     /// Standard card/poster corner radius (8pt — Plezy radiusSm)
     static let cornerRadius: CGFloat = 8
@@ -57,6 +72,19 @@ struct ContinuumTheme {
     static let largePadding: CGFloat = 60
     /// Screen safe-area padding — tvOS always wants overscan
     static let safePadding: CGFloat = 80
+    #elseif os(macOS)
+    /// Base spacing unit
+    static let spacing: CGFloat = 14
+    /// Standard content padding
+    static let padding: CGFloat = 20
+    /// Compact padding
+    static let smallPadding: CGFloat = 10
+    /// Large section spacing
+    static let largePadding: CGFloat = 32
+    /// Window content inset. A Mac window has no bezel to hide behind, so
+    /// content needs a real margin — the phone's 16pt reads as content
+    /// jammed against the window frame.
+    static let safePadding: CGFloat = 24
     #else
     /// Base spacing unit (12pt — Plezy space token)
     static let spacing: CGFloat = 12
@@ -68,6 +96,22 @@ struct ContinuumTheme {
     static let largePadding: CGFloat = 24
     /// No extra overscan padding on iOS
     static let safePadding: CGFloat = 16
+    #endif
+
+    // MARK: - Detail section headers
+
+    /// Letter tracking on the all-caps eyebrow above a section title. Scales
+    /// with the eyebrow's point size so the optical spacing is constant.
+    #if os(tvOS)
+    static let sectionEyebrowTracking: CGFloat = 3.0
+    /// Gap between the eyebrow and the section title.
+    static let sectionHeaderSpacing: CGFloat = 10
+    #elseif os(macOS)
+    static let sectionEyebrowTracking: CGFloat = 1.8
+    static let sectionHeaderSpacing: CGFloat = 5
+    #else
+    static let sectionEyebrowTracking: CGFloat = 1.6
+    static let sectionHeaderSpacing: CGFloat = 4
     #endif
 
     // MARK: - Elevation
@@ -87,26 +131,18 @@ struct ContinuumTheme {
     static let thumbnailAspectRatio: CGFloat = 16.0 / 9.0
 
     // MARK: - Media Card Dimensions
-
-    #if os(tvOS)
-    /// Poster card width in a media row
-    static let posterCardWidth: CGFloat = 260
-    /// Poster card height matching aspect ratio
-    static let posterCardHeight: CGFloat = 390
-    /// Episode/thumbnail card width
-    static let thumbnailCardWidth: CGFloat = 360
-    /// Episode/thumbnail card height
-    static let thumbnailCardHeight: CGFloat = 200
-    #else
-    static let posterCardWidth: CGFloat = 120
-    static let posterCardHeight: CGFloat = 198
-    static let thumbnailCardWidth: CGFloat = 160
-    static let thumbnailCardHeight: CGFloat = 90
-    #endif
+    //
+    // There are none. Cards state an aspect ratio and fill the cell their
+    // grid or rail gives them (`GridItem(.adaptive)`,
+    // `containerRelativeFrame`), so artwork scales with the window on macOS
+    // and iPad instead of being pinned to a per-platform constant. The
+    // aspect ratios above are the whole contract.
 
     /// Profile avatar size
     #if os(tvOS)
     static let profileAvatarSize: CGFloat = 160
+    #elseif os(macOS)
+    static let profileAvatarSize: CGFloat = 96
     #else
     static let profileAvatarSize: CGFloat = 80
     #endif
@@ -116,6 +152,8 @@ struct ContinuumTheme {
     /// under whatever sits above it.
     #if os(tvOS)
     static let placeholderMinHeight: CGFloat = 520
+    #elseif os(macOS)
+    static let placeholderMinHeight: CGFloat = 360
     #else
     static let placeholderMinHeight: CGFloat = 280
     #endif
@@ -317,11 +355,12 @@ struct ContinuumTheme {
         /// Number of preview cards to paint. Enough to fill the visible width
         /// without doing unnecessary image work for off-screen cards.
         static let rowPreviewItemLimit = 8
-        /// Dense poster card (§5.6) for Home + Browse poster rows. Sized so
-        /// a full poster row (header + 2:3 poster + title/year) fits in the
-        /// top of the lower-half row band while leaving a preview of the next
-        /// row below it.
-        static let densePosterCardWidth: CGFloat = 176
+        /// Dense poster row (§5.6) for Home + Browse. Enough columns that a
+        /// full poster row (header + 2:3 poster + title/year) fits in the top
+        /// of the lower-half row band while leaving a preview of the next row
+        /// below it — the count replaces the old fixed 176pt card width now
+        /// that cells size themselves against the row.
+        static let densePosterColumnCount = 8
 
         // MARK: Collections poster grid (§6.3)
 
