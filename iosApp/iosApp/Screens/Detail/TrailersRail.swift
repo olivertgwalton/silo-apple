@@ -23,7 +23,6 @@ struct TrailersRail: View {
         if !entries.isEmpty {
             VStack(alignment: .leading, spacing: ContinuumTheme.spacing) {
                 DetailSectionHeader(title: "Trailers & More")
-                    .padding(.horizontal, ContinuumTheme.safePadding)
                 rail
             }
         }
@@ -37,9 +36,9 @@ struct TrailersRail: View {
                     .focused($focusedEntryId, equals: entry.id)
                 }
             }
-            .padding(.horizontal, ContinuumTheme.safePadding)
-            .padding(.vertical, ContinuumTheme.smallPadding)
+            .padding(.vertical, ContinuumTheme.railCardVerticalPadding)
         }
+        .contentMargins(.horizontal, ContinuumTheme.safePadding, for: .scrollContent)
         // Groups the rail for directional entry and lands it on the first card
         // instead of the geometrically nearest one. Both are inert where
         // nothing takes focus.
@@ -74,8 +73,8 @@ private struct TrailerCardLabel: View {
             thumbnail
             VStack(alignment: .leading, spacing: ContinuumTheme.sectionHeaderSpacing) {
                 Text(kindLabel.uppercased())
-                    .font(.continuumSectionEyebrow)
-                    .tracking(ContinuumTheme.sectionEyebrowTracking)
+                    .font(.continuumCardEyebrow)
+                    .tracking(ContinuumTheme.chipTracking)
                     .foregroundColor(.continuumOnSurface.opacity(0.55))
 
                 // `TrailerRailEntry.title` already falls back to the kind
@@ -84,7 +83,7 @@ private struct TrailerCardLabel: View {
                 // a bug.
                 if entry.title != kindLabel {
                     Text(entry.title)
-                        .font(.continuumSubheadline)
+                        .font(.continuumCardTitle)
                         .foregroundColor(titleColor)
                         // Two lines for long provider names ("Official Trailer
                         // — Subtitled"), but without reserving the second line:
@@ -96,7 +95,7 @@ private struct TrailerCardLabel: View {
 
                 if let secondaryLine {
                     Text(secondaryLine)
-                        .font(.continuumCaption)
+                        .font(.continuumCardMetadata)
                         .foregroundColor(.continuumSecondaryText)
                         .lineLimit(1)
                 }
@@ -152,9 +151,9 @@ private struct TrailerCardLabel: View {
             playBadge
         }
         .frame(width: ContinuumTheme.railCardWidth, height: thumbnailHeight)
-        .clipShape(RoundedRectangle(cornerRadius: ContinuumTheme.smallCornerRadius))
+        .clipShape(RoundedRectangle(cornerRadius: ContinuumTheme.cardCornerRadius / 2))
         .overlay {
-            RoundedRectangle(cornerRadius: ContinuumTheme.smallCornerRadius)
+            RoundedRectangle(cornerRadius: ContinuumTheme.cardCornerRadius / 2)
                 .stroke(
                     Color.white.opacity(isFocused ? 0.9 : 0),
                     lineWidth: isFocused ? ContinuumTheme.focusRingWidth : 0
@@ -199,7 +198,7 @@ private struct TrailerCardLabel: View {
                     height: ContinuumTheme.circleControlDiameter
                 )
             Image(systemName: "play.fill")
-                .font(.continuumSubheadline)
+                .font(.continuumCardTitle)
                 .foregroundColor(.white)
         }
         .shadow(color: .black.opacity(0.35), radius: 8, y: 3)

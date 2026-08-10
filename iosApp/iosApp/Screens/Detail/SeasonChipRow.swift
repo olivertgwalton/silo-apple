@@ -29,9 +29,9 @@ struct SeasonChipRow: View {
                         .focused($focusedSeasonId, equals: season.id)
                     }
                 }
-                .padding(.horizontal, ContinuumTheme.safePadding)
                 .padding(.vertical, ContinuumTheme.smallPadding)
             }
+            .contentMargins(.horizontal, ContinuumTheme.safePadding, for: .scrollContent)
             // Group the row so a directional move resolves to it as a unit,
             // and land entry on the selected chip rather than whichever is
             // geometrically nearest.
@@ -68,10 +68,10 @@ private struct SeasonChip: View {
     var body: some View {
         Button(action: onSelect) {
             Text(label)
-                .font(.continuumSubheadline)
+                .font(.continuumSeasonChip)
                 .fontWeight(isSelected ? .semibold : .medium)
-                .padding(.horizontal, ContinuumTheme.padding)
-                .padding(.vertical, ContinuumTheme.smallPadding)
+                .padding(.horizontal, ContinuumTheme.chipLabelPadding)
+                .padding(.vertical, ContinuumTheme.chipLabelPadding / 2)
         }
         .buttonStyle(SeasonChipStyle(isSelected: isSelected))
         .accessibilityAddTraits(isSelected ? .isSelected : [])

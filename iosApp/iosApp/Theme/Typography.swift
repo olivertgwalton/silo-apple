@@ -48,6 +48,42 @@ extension Font {
     /// Detail-hero synopsis body.
     static let continuumSynopsis = Font.system(size: 26, weight: .regular)
 
+    // MARK: - Detail components
+    //
+    // The steps the detail hero, rails and action controls are set in. These
+    // exist because the general scale above is deliberately coarse — eight
+    // steps for a whole app — and collapsing the detail screens onto it put
+    // several of them two to six points out, and the hero title sixteen. A
+    // named step per role keeps the components free of point sizes without
+    // rounding the design to the nearest general token.
+
+    /// Detail-hero title, and the series name on an episode hero.
+    static let continuumDetailTitle = Font.system(size: 92, weight: .black)
+    /// Episode name under the series name on an episode hero.
+    static let continuumDetailEpisodeTitle = Font.system(size: 50, weight: .semibold)
+    /// Colon-split second line under either of the above.
+    static let continuumDetailSubtitle = Font.system(size: 40, weight: .heavy)
+
+    /// Title on a rail card (episode still, trailer).
+    static let continuumCardTitle = Font.system(size: 26, weight: .semibold)
+    /// Air date / runtime line under a rail-card title.
+    static let continuumCardMetadata = Font.system(size: 20, weight: .medium)
+    /// All-caps "EPISODE 4" / "TRAILER" eyebrow above a rail-card title.
+    static let continuumCardEyebrow = Font.system(size: 18, weight: .bold)
+    /// "NOW VIEWING" pill on the card representing the current page.
+    static let continuumCardBadge = Font.system(size: 14, weight: .heavy)
+
+    /// Outlined quality chip in a hero facts row (4K / HDR / ATMOS).
+    static let continuumFactChip = Font.system(size: 16, weight: .heavy)
+
+    /// Primary play pill in a detail hero.
+    static let continuumActionPrimary = Font.system(size: 30, weight: .semibold)
+    /// Its darker secondary peer, and the pre-play selector pills.
+    static let continuumActionSecondary = Font.system(size: 26, weight: .semibold)
+
+    /// Season chip label.
+    static let continuumSeasonChip = Font.system(size: 22, weight: .medium)
+
     #elseif os(macOS)
 
     // A Mac is read at desk distance, so body copy stays near the iOS sizes.
@@ -96,6 +132,42 @@ extension Font {
     /// Detail-hero synopsis body.
     static let continuumSynopsis = Font.system(size: 15, weight: .regular)
 
+    // MARK: - Detail components
+    //
+    // The steps the detail hero, rails and action controls are set in. These
+    // exist because the general scale above is deliberately coarse — eight
+    // steps for a whole app — and collapsing the detail screens onto it put
+    // several of them two to six points out, and the hero title sixteen. A
+    // named step per role keeps the components free of point sizes without
+    // rounding the design to the nearest general token.
+
+    /// Detail-hero title, and the series name on an episode hero.
+    static let continuumDetailTitle = Font.system(size: 30, weight: .heavy)
+    /// Episode name under the series name on an episode hero.
+    static let continuumDetailEpisodeTitle = Font.system(size: 22, weight: .semibold)
+    /// Colon-split second line under either of the above.
+    static let continuumDetailSubtitle = Font.system(size: 13, weight: .heavy)
+
+    /// Title on a rail card (episode still, trailer).
+    static let continuumCardTitle = Font.system(size: 14, weight: .semibold)
+    /// Air date / runtime line under a rail-card title.
+    static let continuumCardMetadata = Font.system(size: 12, weight: .medium)
+    /// All-caps "EPISODE 4" / "TRAILER" eyebrow above a rail-card title.
+    static let continuumCardEyebrow = Font.system(size: 10, weight: .bold)
+    /// "NOW VIEWING" pill on the card representing the current page.
+    static let continuumCardBadge = Font.system(size: 9, weight: .heavy)
+
+    /// Outlined quality chip in a hero facts row (4K / HDR / ATMOS).
+    static let continuumFactChip = Font.system(size: 10, weight: .heavy)
+
+    /// Primary play pill in a detail hero.
+    static let continuumActionPrimary = Font.system(size: 17, weight: .semibold)
+    /// Its darker secondary peer, and the pre-play selector pills.
+    static let continuumActionSecondary = Font.system(size: 17, weight: .semibold)
+
+    /// Season chip label.
+    static let continuumSeasonChip = Font.system(size: 14, weight: .medium)
+
     #else
 
     /// Hero title overlaid on backdrop (36pt bold, tight tracking)
@@ -139,6 +211,42 @@ extension Font {
 
     /// Detail-hero synopsis body.
     static let continuumSynopsis = Font.system(size: 15, weight: .regular)
+
+    // MARK: - Detail components
+    //
+    // The steps the detail hero, rails and action controls are set in. These
+    // exist because the general scale above is deliberately coarse — eight
+    // steps for a whole app — and collapsing the detail screens onto it put
+    // several of them two to six points out, and the hero title sixteen. A
+    // named step per role keeps the components free of point sizes without
+    // rounding the design to the nearest general token.
+
+    /// Detail-hero title, and the series name on an episode hero.
+    static let continuumDetailTitle = Font.system(size: 30, weight: .heavy)
+    /// Episode name under the series name on an episode hero.
+    static let continuumDetailEpisodeTitle = Font.system(size: 22, weight: .semibold)
+    /// Colon-split second line under either of the above.
+    static let continuumDetailSubtitle = Font.system(size: 13, weight: .heavy)
+
+    /// Title on a rail card (episode still, trailer).
+    static let continuumCardTitle = Font.system(size: 14, weight: .semibold)
+    /// Air date / runtime line under a rail-card title.
+    static let continuumCardMetadata = Font.system(size: 12, weight: .medium)
+    /// All-caps "EPISODE 4" / "TRAILER" eyebrow above a rail-card title.
+    static let continuumCardEyebrow = Font.system(size: 10, weight: .bold)
+    /// "NOW VIEWING" pill on the card representing the current page.
+    static let continuumCardBadge = Font.system(size: 9, weight: .heavy)
+
+    /// Outlined quality chip in a hero facts row (4K / HDR / ATMOS).
+    static let continuumFactChip = Font.system(size: 10, weight: .heavy)
+
+    /// Primary play pill in a detail hero.
+    static let continuumActionPrimary = Font.system(size: 17, weight: .semibold)
+    /// Its darker secondary peer, and the pre-play selector pills.
+    static let continuumActionSecondary = Font.system(size: 17, weight: .semibold)
+
+    /// Season chip label.
+    static let continuumSeasonChip = Font.system(size: 14, weight: .medium)
 
     #endif
 }

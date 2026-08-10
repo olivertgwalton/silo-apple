@@ -132,6 +132,47 @@ struct ContinuumTheme {
     static let railCardSpacing: CGFloat = 14
     #endif
 
+    // MARK: - Detail chips and cards
+    //
+    // Restored to the values the Phone*/TV* components carried before they
+    // were merged. The general spacing scale above is too coarse for a chip:
+    // rounding a 4pt inset to the nearest 8 doubles it.
+
+    #if os(tvOS)
+    static let chipTracking: CGFloat = 1.0
+    static let chipHorizontalPadding: CGFloat = 9
+    static let chipVerticalPadding: CGFloat = 4
+    static let chipLabelPadding: CGFloat = 26
+    static let watchedBadgeDiameter: CGFloat = 40
+    static let progressBarHeight: CGFloat = 5
+    static let railCardVerticalPadding: CGFloat = 32
+    static let factsColumnGap: CGFloat = 64
+    static let factsRowPadding: CGFloat = 22
+    static let factsLabelTracking: CGFloat = 2.0
+    #elseif os(macOS)
+    static let chipTracking: CGFloat = 0.8
+    static let chipHorizontalPadding: CGFloat = 6
+    static let chipVerticalPadding: CGFloat = 2
+    static let chipLabelPadding: CGFloat = 16
+    static let watchedBadgeDiameter: CGFloat = 22
+    static let progressBarHeight: CGFloat = 3
+    static let railCardVerticalPadding: CGFloat = 4
+    static let factsColumnGap: CGFloat = 16
+    static let factsRowPadding: CGFloat = 12
+    static let factsLabelTracking: CGFloat = 1.2
+    #else
+    static let chipTracking: CGFloat = 0.8
+    static let chipHorizontalPadding: CGFloat = 6
+    static let chipVerticalPadding: CGFloat = 2
+    static let chipLabelPadding: CGFloat = 16
+    static let watchedBadgeDiameter: CGFloat = 22
+    static let progressBarHeight: CGFloat = 3
+    static let railCardVerticalPadding: CGFloat = 4
+    static let factsColumnGap: CGFloat = 16
+    static let factsRowPadding: CGFloat = 12
+    static let factsLabelTracking: CGFloat = 1.2
+    #endif
+
     // MARK: - Focus
     //
     // Focus appearance, not focus behaviour — `defaultFocus` is applied

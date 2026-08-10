@@ -22,7 +22,7 @@ struct HeroEyebrow: View {
 
     var body: some View {
         Text(text)
-            .font(.continuumSectionEyebrow)
+            .font(.continuumCardEyebrow)
             .fontWeight(.semibold)
             .tracking(ContinuumTheme.sectionEyebrowTracking)
             .foregroundColor(.continuumOnSurface)
@@ -56,13 +56,13 @@ struct HeroTitle: View {
         let parts = DetailHeroMetadata.splitTitle(title)
         VStack(alignment: textAlignment.horizontal, spacing: ContinuumTheme.sectionHeaderSpacing) {
             Text(floatsOverArtwork ? parts.primary.uppercased() : parts.primary)
-                .font(.continuumHeroTitle.heroDisplay(floatsOverArtwork))
+                .font(.continuumDetailTitle.heroDisplay(floatsOverArtwork))
                 .foregroundColor(.continuumOnSurface)
                 .heroTitleLine(textAlignment)
                 .heroTitleShadow(floatsOverArtwork)
             if let subtitle = parts.subtitle {
                 Text(subtitle.uppercased())
-                    .font(.continuumSubheadline.heroDisplay(floatsOverArtwork))
+                    .font(.continuumDetailSubtitle.heroDisplay(floatsOverArtwork))
                     .tracking(ContinuumTheme.sectionEyebrowTracking)
                     .foregroundColor(.continuumOnSurface.opacity(0.8))
                     .heroTitleLine(textAlignment)
@@ -85,18 +85,18 @@ struct HeroEpisodeHierarchyTitle: View {
         let parts = DetailHeroMetadata.splitTitle(episodeTitle)
         VStack(alignment: textAlignment.horizontal, spacing: ContinuumTheme.sectionHeaderSpacing) {
             Text(floatsOverArtwork ? seriesTitle.uppercased() : seriesTitle)
-                .font(.continuumHeroTitle.heroDisplay(floatsOverArtwork))
+                .font(.continuumDetailTitle.heroDisplay(floatsOverArtwork))
                 .foregroundColor(.continuumOnSurface)
                 .heroTitleLine(textAlignment)
                 .heroTitleShadow(floatsOverArtwork)
             Text(parts.primary)
-                .font(.continuumTitle.heroDisplay(floatsOverArtwork))
+                .font(.continuumDetailEpisodeTitle.heroDisplay(floatsOverArtwork))
                 .foregroundColor(.continuumOnSurface.opacity(0.92))
                 .heroTitleLine(textAlignment)
                 .heroTitleShadow(floatsOverArtwork)
             if let subtitle = parts.subtitle {
                 Text(subtitle.uppercased())
-                    .font(.continuumSubheadline.heroDisplay(floatsOverArtwork))
+                    .font(.continuumDetailSubtitle.heroDisplay(floatsOverArtwork))
                     .tracking(ContinuumTheme.sectionEyebrowTracking)
                     .foregroundColor(.continuumOnSurface.opacity(0.78))
                     .heroTitleLine(textAlignment)
@@ -230,12 +230,11 @@ private struct HeroChip: View {
 
     var body: some View {
         Text(value)
-            .font(.continuumSectionEyebrow)
-            .fontWeight(.heavy)
-            .tracking(ContinuumTheme.sectionEyebrowTracking)
+            .font(.continuumFactChip)
+            .tracking(ContinuumTheme.chipTracking)
             .foregroundColor(.continuumOnSurface)
-            .padding(.horizontal, ContinuumTheme.sectionHeaderSpacing)
-            .padding(.vertical, ContinuumTheme.sectionHeaderSpacing / 2)
+            .padding(.horizontal, ContinuumTheme.chipHorizontalPadding)
+            .padding(.vertical, ContinuumTheme.chipVerticalPadding)
             .overlay {
                 RoundedRectangle(cornerRadius: ContinuumTheme.smallCornerRadius / 2)
                     .stroke(Color.continuumOnSurface.opacity(0.55), lineWidth: 1)

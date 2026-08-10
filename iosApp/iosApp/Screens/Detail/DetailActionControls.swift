@@ -36,7 +36,7 @@ struct DetailPillButton: View {
                 Image(systemName: icon)
                 Text(title).lineLimit(1)
             }
-            .font(kind == .primary ? .continuumHeadline : .continuumSubheadline)
+            .font(kind == .primary ? .continuumActionPrimary : .continuumActionSecondary)
             .frame(maxWidth: fullWidth ? .infinity : nil)
         }
         .buttonStyle(DetailPillButtonStyle(kind: kind))
@@ -174,7 +174,7 @@ struct DetailCircleActionButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: isActive ? (iconActive ?? icon) : icon)
-                .font(.continuumSubheadline)
+                .font(.continuumActionSecondary)
                 .contentTransition(.symbolEffect(.replace.magic(fallback: .replace)))
         }
         .buttonStyle(DetailCircleButtonStyle(isActive: isActive))
@@ -194,7 +194,7 @@ struct DetailCircleMenuButton<MenuContent: View>: View {
             menu()
         } label: {
             Image(systemName: icon)
-                .font(.continuumSubheadline)
+                .font(.continuumActionSecondary)
                 .contentTransition(.symbolEffect(.replace))
         }
         .menuStyle(.button)

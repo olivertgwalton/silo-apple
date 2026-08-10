@@ -19,18 +19,18 @@ struct DetailFactsSection: View {
                             .fill(Color.white.opacity(0.08))
                             .frame(height: 1)
                     }
-                    HStack(alignment: .top, spacing: ContinuumTheme.padding) {
+                    HStack(alignment: .top, spacing: ContinuumTheme.factsColumnGap) {
                         Text(fact.label.uppercased())
-                            .font(.continuumSectionEyebrow)
-                            .tracking(ContinuumTheme.sectionEyebrowTracking)
+                            .font(.continuumCardEyebrow)
+                            .tracking(ContinuumTheme.factsLabelTracking)
                             .foregroundColor(.continuumOnSurface.opacity(0.5))
                             .frame(width: ContinuumTheme.factsLabelWidth, alignment: .leading)
                         Text(fact.value)
-                            .font(.continuumBody)
+                            .font(.continuumCaption)
                             .foregroundColor(.continuumOnSurface)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .padding(.vertical, ContinuumTheme.smallPadding)
+                    .padding(.vertical, ContinuumTheme.factsRowPadding)
                 }
             }
             .frame(maxWidth: ContinuumTheme.readableContentWidth, alignment: .leading)

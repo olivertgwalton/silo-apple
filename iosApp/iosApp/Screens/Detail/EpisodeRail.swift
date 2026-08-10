@@ -51,9 +51,9 @@ struct EpisodeRail: View {
                         .focused($focusedCardId, equals: episode.contentId)
                     }
                 }
-                .padding(.horizontal, ContinuumTheme.safePadding)
-                .padding(.vertical, ContinuumTheme.smallPadding)
+                .padding(.vertical, ContinuumTheme.railCardVerticalPadding)
             }
+            .contentMargins(.horizontal, ContinuumTheme.safePadding, for: .scrollContent)
             // Groups the rail for directional entry and lands it on the current
             // episode rather than the geometrically nearest card. Both are inert
             // where nothing takes focus.
@@ -204,8 +204,8 @@ private struct EpisodeCardLabel: View {
         VStack(alignment: .leading, spacing: ContinuumTheme.sectionHeaderSpacing) {
             HStack(spacing: ContinuumTheme.sectionHeaderSpacing) {
                 Text(EpisodeFormatting.cardNumberLabel(for: episode))
-                    .font(.continuumSectionEyebrow)
-                    .tracking(ContinuumTheme.sectionEyebrowTracking)
+                    .font(.continuumCardEyebrow)
+                    .tracking(ContinuumTheme.chipTracking)
                     .foregroundStyle(Color.continuumOnSurface.opacity(0.55))
                 if isCurrent {
                     nowViewingTag
@@ -213,7 +213,7 @@ private struct EpisodeCardLabel: View {
             }
 
             Text(EpisodeFormatting.title(for: episode))
-                .font(.continuumSubheadline)
+                .font(.continuumCardTitle)
                 .foregroundStyle(titleColor)
                 // Two lines for long titles, but without reserving the second:
                 // a single-line title (the common case) was leaving a full
@@ -224,7 +224,7 @@ private struct EpisodeCardLabel: View {
             if captionStyle.showsMetadata {
                 if let metadataLine = EpisodeFormatting.metadataLine(for: episode) {
                     Text(metadataLine)
-                        .font(.continuumCaption)
+                        .font(.continuumCardMetadata)
                         .foregroundStyle(Color.continuumSecondaryText)
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
@@ -232,7 +232,7 @@ private struct EpisodeCardLabel: View {
 
                 if let overview = episode.overview, !overview.isEmpty {
                     Text(overview)
-                        .font(.continuumCaption)
+                        .font(.continuumCardMetadata)
                         .foregroundStyle(Color.continuumSecondaryText)
                         .lineLimit(3, reservesSpace: true)
                         .lineSpacing(2)
@@ -250,12 +250,11 @@ private struct EpisodeCardLabel: View {
 
     private var nowViewingTag: some View {
         Text("NOW VIEWING")
-            .font(.continuumSectionEyebrow)
-            .fontWeight(.heavy)
-            .tracking(ContinuumTheme.sectionEyebrowTracking)
+            .font(.continuumCardBadge)
+            .tracking(ContinuumTheme.chipTracking)
             .foregroundColor(.black)
-            .padding(.horizontal, ContinuumTheme.sectionHeaderSpacing)
-            .padding(.vertical, ContinuumTheme.sectionHeaderSpacing / 2)
+            .padding(.horizontal, ContinuumTheme.chipHorizontalPadding)
+            .padding(.vertical, ContinuumTheme.chipVerticalPadding)
             .background(Capsule().fill(Color.white))
     }
 
@@ -291,9 +290,9 @@ private struct EpisodeCardLabel: View {
             }
         }
         .frame(width: cardWidth, height: stillHeight)
-        .clipShape(RoundedRectangle(cornerRadius: ContinuumTheme.smallCornerRadius))
+        .clipShape(RoundedRectangle(cornerRadius: ContinuumTheme.cardCornerRadius / 2))
         .overlay {
-            RoundedRectangle(cornerRadius: ContinuumTheme.smallCornerRadius)
+            RoundedRectangle(cornerRadius: ContinuumTheme.cardCornerRadius / 2)
                 .stroke(borderColor, lineWidth: borderWidth)
         }
     }
@@ -315,8 +314,8 @@ private struct EpisodeCardLabel: View {
             Circle()
                 .fill(Color.white)
                 .frame(
-                    width: ContinuumTheme.circleControlDiameter / 2,
-                    height: ContinuumTheme.circleControlDiameter / 2
+                    width: ContinuumTheme.watchedBadgeDiameter,
+                    height: ContinuumTheme.watchedBadgeDiameter
                 )
                 .shadow(color: .black.opacity(0.3), radius: 3)
             Image(systemName: "checkmark")
@@ -335,7 +334,7 @@ private struct EpisodeCardLabel: View {
                     .frame(width: geo.size.width * CGFloat(fraction))
             }
         }
-        .frame(height: ContinuumTheme.currentItemRingWidth)
+        .frame(height: ContinuumTheme.progressBarHeight)
     }
 }
 
