@@ -437,7 +437,6 @@ struct DownloadActionButton: View {
         case .registering, .preparing, .queued, .fetchingAssets: return "Preparing"
         case .completed, .revoked: return "Downloaded"
         case .failed: return "Failed"
-        default: return "Download"
         }
     }
 

@@ -102,7 +102,7 @@ extension SiloAppDelegate: UNUserNotificationCenterDelegate {
         // Navigation depends only on the payload already in hand — post the
         // deep link before any network work so the tap routes instantly.
         let userInfo = response.notification.request.content.userInfo
-        await ApplePushDeepLinkCoordinator.shared.postDeepLink(from: userInfo)
+        ApplePushDeepLinkCoordinator.shared.postDeepLink(from: userInfo)
         if response.notification.request.trigger is UNPushNotificationTrigger {
             Task { @MainActor in
                 await ApplePushNotificationSyncCoordinator.shared.refreshFromRemoteNotification()

@@ -441,7 +441,7 @@ final class SubtitleSession {
     ///   - language: optional ISO language tag (also informational).
     func openLive(slot: SubtitleSlot, label: String? = nil, language: String? = nil) {
         cancelFetchTask(for: slot)
-        withLock { bitmapCueStores.removeValue(forKey: slot) }
+        withLock { _ = bitmapCueStores.removeValue(forKey: slot) }
         let params = withLock { stylingParams }
         let header = SubtitleStylingOverride.syntheticHeader(
             params: params,

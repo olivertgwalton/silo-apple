@@ -251,7 +251,6 @@ final class PendingReportStore {
             fingerprint: capture.fingerprint
         )
 
-        var didPublishReportDirectory = false
         do {
             try fileManager.createDirectory(at: stagingDirectory, withIntermediateDirectories: true)
             try excludeFromBackup(stagingDirectory)
@@ -276,13 +275,12 @@ final class PendingReportStore {
                 try artifact.data.write(to: url, options: .atomic)
             }
 
+            // Publishing the staged directory is the last throwing step, so a
+            // failure here always leaves the report directory absent — only the
+            // staging directory needs unwinding.
             try fileManager.moveItem(at: stagingDirectory, to: reportDirectory)
-            didPublishReportDirectory = true
         } catch {
             try? fileManager.removeItem(at: stagingDirectory)
-            if didPublishReportDirectory {
-                try? fileManager.removeItem(at: reportDirectory)
-            }
             throw error
         }
 
