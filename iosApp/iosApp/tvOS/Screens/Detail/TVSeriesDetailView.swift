@@ -129,12 +129,12 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
             seriesTitle: nil,
             logoUrl: detail.logoUrl,
             backdropUrl: detail.backdropUrl,
-            eyebrow: TVHeroMetadata.eyebrow(from: detail),
-            sourceTokens: TVHeroMetadata.seriesSourceTokens(from: detail),
-            ratingChip: TVHeroMetadata.contentRatingChip(from: detail),
+            eyebrow: DetailHeroMetadata.eyebrow(from: detail),
+            sourceTokens: DetailHeroMetadata.seriesSourceTokens(from: detail),
+            ratingChip: DetailHeroMetadata.contentRatingChip(from: detail),
             overview: detail.overview,
-            factsLine: TVHeroMetadata.seriesFactsLine(from: detail),
-            starringText: TVHeroMetadata.starringText(from: detail),
+            factsLine: DetailHeroMetadata.seriesFactsLine(from: detail),
+            starringText: DetailHeroMetadata.starringText(from: detail),
             actions: { actionColumn },
             belowSynopsis: belowSynopsis
         )
@@ -166,7 +166,7 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
             if let trailerFetchStatus {
                 // Non-focusable readout, so it adds no stop to the action
                 // column's focus traversal.
-                TVTrailerStatusPill(
+                TrailerStatusPill(
                     message: trailerFetchStatus,
                     isFetching: isFetchingTrailers,
                     onAutoDismiss: onTrailerStatusShown
@@ -182,7 +182,7 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
     private var actionRow: some View {
         HStack(spacing: 36) {
             if let nextUp = nextUpEpisode {
-                TVPrimaryPillButton(
+                DetailPillButton(
                     icon: "play.fill",
                     title: playButtonLabel(for: nextUp),
                     action: { onPlayEpisode(nextUp.contentId, selectedFileId(for: nextUp), false) },
@@ -195,7 +195,7 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
                     resetInitialPlayFocus()
                 }
                 if nextUp.userData?.isInProgress == true {
-                    TVSecondaryPillButton(
+                    DetailPillButton(
                         icon: "backward.end.fill",
                         title: "Start Over",
                         action: { onPlayEpisode(nextUp.contentId, selectedFileId(for: nextUp), true) }
@@ -203,7 +203,7 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
                 }
             }
 
-            TVCircleActionButton(
+            DetailCircleActionButton(
                 icon: "heart",
                 iconActive: "heart.fill",
                 isActive: isFavorite,
@@ -211,7 +211,7 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
                 action: onToggleFavorite
             )
 
-            TVCircleActionButton(
+            DetailCircleActionButton(
                 icon: "bookmark",
                 iconActive: "bookmark.fill",
                 isActive: inWatchlist,
@@ -219,7 +219,7 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
                 action: onToggleWatchlist
             )
 
-            TVCircleActionButton(
+            DetailCircleActionButton(
                 icon: "checkmark.circle",
                 iconActive: "checkmark.circle.fill",
                 isActive: isWatched,
@@ -250,7 +250,9 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
     /// `.focusSection()`, so it needs no focus work of its own.
     @ViewBuilder
     private var moreMenu: some View {
-        TVCircleMenuButton(accessibilityLabel: "More options") {
+        DetailCircleMenuButton(
+            accessibilityLabel: "More options"
+        ) {
             Button(action: onFindTrailers) {
                 Label("Find Trailers", systemImage: "film.stack")
             }
@@ -329,22 +331,20 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
     }
 
     private var episodeSectionHeader: some View {
-        HStack(alignment: .firstTextBaseline) {
-            TVSectionHeader(
-                label: selectedSeason.map { "Season \($0.seasonNumber)" } ?? "Episodes",
-                title: "Episodes"
-            )
-            Spacer()
-            if let count = selectedSeason?.episodeCount, count > 0 {
-                Text("\(count) episode\(count == 1 ? "" : "s")")
-                    .font(.system(size: 22, weight: .medium))
-                    .foregroundColor(.continuumSecondaryText)
-            }
-        }
+        DetailSectionHeader(
+            label: selectedSeason.map { "Season \($0.seasonNumber)" } ?? "Episodes",
+            title: "Episodes",
+            trailingText: episodeCountSubtitle
+        )
+    }
+
+    private var episodeCountSubtitle: String? {
+        guard let count = selectedSeason?.episodeCount, count > 0 else { return nil }
+        return "\(count) episode\(count == 1 ? "" : "s")"
     }
 
     private var seasonRow: some View {
-        TVSeasonChipRow(
+        SeasonChipRow(
             seasons: seasons,
             selectedSeasonId: selectedSeason?.id,
             onSelect: onSelectSeason
@@ -366,10 +366,10 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
             }
         } else if episodes.isEmpty {
             Text("No episodes available")
-                .font(.system(size: 22, weight: .regular))
+                .font(.continuumCaption)
                 .foregroundColor(.continuumSecondaryText)
         } else {
-            TVEpisodeRail(
+            EpisodeRail(
                 episodes: episodes,
                 onSelect: onEpisodeTap,
                 onSetWatched: onSetEpisodeWatched,
@@ -388,7 +388,7 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
     private var similarSection: some View {
         // Header lives inside the rail so it disappears with the cards when
         // recommendations are disabled or empty.
-        TVSimilarRail(
+        SimilarRail(
             contentId: detail.contentId,
             onSelect: onNavigateToItem
         )
@@ -399,7 +399,10 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
     private var trailersSection: some View {
         // Header lives inside the rail so it disappears with the cards when
         // the item has neither remote videos nor local extras.
-        TVTrailersRail(entries: trailerEntries, onSelect: onSelectTrailer)
+        TrailersRail(
+            entries: trailerEntries,
+            onSelect: onSelectTrailer
+        )
     }
 
     // MARK: - Cast
@@ -407,8 +410,8 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
     @ViewBuilder
     private func castSection(cast: [CastMember]) -> some View {
         VStack(alignment: .leading, spacing: 28) {
-            TVSectionHeader(title: "Cast & Crew")
-            TVDetailCastRail(cast: cast, onTap: onPersonTap)
+            DetailSectionHeader(title: "Cast & Crew")
+            DetailCastRail(cast: cast, onTap: onPersonTap)
         }
     }
 
@@ -416,8 +419,8 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
 
     private var detailsSection: some View {
         VStack(alignment: .leading, spacing: 28) {
-            TVSectionHeader(title: "Details")
-            TVDetailFactsSection(detail: detail)
+            DetailSectionHeader(title: "Details")
+            DetailFactsSection(detail: detail)
         }
     }
 

@@ -45,6 +45,7 @@ struct FilterView: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        .presentationSizing(.form)
         .task { await viewModel.loadFacetsIfNeeded() }
         .onDisappear { commitIfChanged() }
     }

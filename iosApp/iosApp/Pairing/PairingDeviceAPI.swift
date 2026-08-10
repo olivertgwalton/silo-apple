@@ -99,32 +99,6 @@ struct PairingDeviceAPI: PairingDeviceAuthorizing {
                                               bearer: bearer, body: DeviceApproveRequest(code: userCode))
     }
 
-    func approveRemotePlayback(
-        serverURL: String,
-        bearer: String,
-        profileId: String,
-        profileToken: String?,
-        userCode: String
-    ) async throws {
-        let _: EmptyResponse = try await post(
-            serverURL,
-            "/api/v1/auth/device/approve-handoff",
-            bearer: bearer,
-            profileId: profileId,
-            profileToken: profileToken,
-            body: DeviceApproveRequest(code: userCode)
-        )
-    }
-
-    func denyRemotePlayback(serverURL: String, bearer: String, userCode: String) async throws {
-        let _: EmptyResponse = try await post(
-            serverURL,
-            "/api/v1/auth/device/deny",
-            bearer: bearer,
-            body: DeviceApproveRequest(code: userCode)
-        )
-    }
-
     private struct EmptyResponse: Codable {}
 
     // MARK: Transport

@@ -47,21 +47,22 @@ struct MediaRow: View {
     var focusRequest: Int = 0
     var onRemoveFromContinueWatching: ((SectionItem) -> Void)? = nil
     var onSetWatched: ((SectionItem, Bool) async -> Bool)? = nil
-    var onMoveUp: (() -> Void)? = nil
     /// tvOS-only: reports which of the row's items holds card focus —
     /// the Skyline focus marquee mirrors it. Fires on focus gain only;
     /// focus leaving the row (nil) is deliberately not reported so the
     /// marquee retains the last previewed item while focus is in chrome.
     var onItemFocus: ((SectionItem) -> Void)? = nil
-    /// Optional width for poster/square cards — Skyline's dense landing
-    /// rows (§5.6) pass a compact width. Episode thumbs are unaffected.
-    var cardWidth: CGFloat? = nil
+    /// How many cards span the row's width. Cells derive their width from
+    /// this via `containerRelativeFrame`, so the row re-flows with the window
+    /// instead of drawing fixed-size cards. Skyline's dense landing rows
+    /// (§5.6) raise the count to fit more, smaller posters above the fold.
+    /// `nil` takes the platform default.
+    var visibleCardCount: Int? = nil
     /// Optional tvOS-only vertical padding override for the card strip.
     /// Standard rows keep the default breathing room for focus lift.
     var cardVerticalPadding: CGFloat? = nil
     /// Down at the row's boundary — used by the Skyline section pager to
     /// page to the next section (there is no row geometrically below).
-    var onMoveDown: (() -> Void)? = nil
 
     @FocusState private var focusedItemId: String?
     #if os(tvOS)
@@ -71,6 +72,9 @@ struct MediaRow: View {
     /// on a `focusRequest` change).
     @State private var lastAppliedFocusRequest = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Scope the programmatic kick re-resolves focus within.
+    @Namespace private var rowFocusScope
+    @Environment(\.resetFocus) private var resetFocus
     private static let focusLogger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "com.continuum.app",
         category: "TVFocus"
@@ -85,7 +89,6 @@ struct MediaRow: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         #if os(tvOS)
         .focusSection()
-        .modifier(TVRowMoveHandler(onMoveUp: onMoveUp, onMoveDown: onMoveDown))
         .onChange(of: focusedItemId) { _, newValue in
             guard let newValue,
                   let item = items.first(where: { $0.contentId == newValue }) else { return }
@@ -100,38 +103,11 @@ struct MediaRow: View {
         guard request > 0, request != lastAppliedFocusRequest,
               let firstItem = items.first else { return }
         lastAppliedFocusRequest = request
-        // Scroll home first, claim a turn later: a row parked deep in its
-        // strip keeps the first card unmounted (LazyHStack) or clipped, and
-        // the focus engine silently drops @FocusState writes to views it
-        // can't focus. The instant scroll mounts/unclips the card; the
-        // deferred write then lands on a focusable target.
         withAnimation(reduceMotion ? nil : .easeInOut(duration: ContinuumTheme.slowDuration)) {
             proxy.scrollTo(firstItem.id, anchor: .leading)
         }
-        DispatchQueue.main.async {
-            Self.focusLogger.debug("mediaRow.applyFocus request=\(request, privacy: .public)")
-            claimFirstItemFocus(firstItem)
-        }
-    }
-
-    /// Write the claim, then verify it actually stuck and re-assert if not.
-    /// A single write races two things that both win by coming later: the
-    /// engine's remembered-focus repair after the top bar resigns, and the
-    /// geometric re-repairs it makes while the feed's scroll-to-top slides
-    /// rows (and their cards) under whatever it had focused. @FocusState
-    /// reflects *actual* focus, so a rejected/overridden write reads back as
-    /// a different value — retry until the scroll settles and ours is last.
-    private func claimFirstItemFocus(_ firstItem: SectionItem, attempt: Int = 0) {
-        focusedItemId = firstItem.contentId
-        onItemFocus?(firstItem)
-        // Window must outlast the ~300ms animated ride home plus the engine's
-        // settling repairs, or the last mid-flight repair wins after all.
-        guard attempt < 8 else { return }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
-            guard focusedItemId != firstItem.contentId else { return }
-            Self.focusLogger.debug("mediaRow.reclaimFocus attempt=\(attempt + 1, privacy: .public)")
-            claimFirstItemFocus(firstItem, attempt: attempt + 1)
-        }
+        Self.focusLogger.debug("mediaRow.applyFocus request=\(request, privacy: .public)")
+        resetFocus(in: rowFocusScope)
     }
     #endif
 
@@ -174,52 +150,59 @@ struct MediaRow: View {
         ScrollView(.horizontal, showsIndicators: false) {
             LazyHStack(spacing: cardSpacing) {
                 ForEach(items) { item in
-                    switch layout {
-                    case .poster, .square:
-                        MediaCard(
-                            title: posterTitle(for: item),
-                            posterUrl: item.posterUrl ?? "",
-                            thumbhash: item.posterThumbhash,
-                            year: item.year,
-                            progress: progressValue(for: item),
-                            userState: item.userState,
-                            overlayData: OverlayData.from(item),
-                            action: { onItemTap(item.contentId) },
-                            playAction: playAction(for: item),
-                            focusedItemId: rowFocusBinding,
-                            contentId: item.contentId,
-                            onRemoveFromContinueWatching: continueWatchingRemovalAction(for: item),
-                            onSetWatched: watchedToggleAction(for: item),
-                            aspect: layout == .square ? .square : .poster,
-                            cardWidthOverride: cardWidth,
-                            episodeBadge: episodeBadge(for: item)
-                        )
-                    case .thumbnail:
-                        EpisodeThumbCard(
-                            item: item,
-                            showProgress: showProgress,
-                            action: { onItemTap(item.contentId) },
-                            playAction: playAction(for: item),
-                            focusedItemId: rowFocusBinding,
-                            onRemoveFromContinueWatching: continueWatchingRemovalAction(for: item),
-                            onSetWatched: watchedToggleAction(for: item)
-                        )
+                    Group {
+                        switch layout {
+                        case .poster, .square:
+                            MediaCard(
+                                title: posterTitle(for: item),
+                                posterUrl: item.posterUrl ?? "",
+                                thumbhash: item.posterThumbhash,
+                                year: item.year,
+                                progress: progressValue(for: item),
+                                userState: item.userState,
+                                overlayData: OverlayData.from(item),
+                                action: { onItemTap(item.contentId) },
+                                playAction: playAction(for: item),
+                                focusedItemId: rowFocusBinding,
+                                contentId: item.contentId,
+                                onRemoveFromContinueWatching: continueWatchingRemovalAction(for: item),
+                                onSetWatched: watchedToggleAction(for: item),
+                                aspect: layout == .square ? .square : .poster,
+                                episodeBadge: episodeBadge(for: item)
+                            )
+                        case .thumbnail:
+                            EpisodeThumbCard(
+                                item: item,
+                                showProgress: showProgress,
+                                action: { onItemTap(item.contentId) },
+                                playAction: playAction(for: item),
+                                focusedItemId: rowFocusBinding,
+                                onRemoveFromContinueWatching: continueWatchingRemovalAction(for: item),
+                                onSetWatched: watchedToggleAction(for: item)
+                            )
+                        }
                     }
+                    .containerRelativeFrame(
+                        .horizontal,
+                        count: resolvedCardCount,
+                        span: 1,
+                        spacing: cardSpacing
+                    )
                 }
             }
-            #if !os(tvOS)
-            .padding(.horizontal, ContinuumTheme.safePadding)
-            #endif
             .padding(.vertical, verticalCardPadding)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        #if os(tvOS)
-        // The leading gutter must be a content *margin*, not padding inside
-        // the scroll content: programmatic `scrollTo(anchor: .leading)` and
-        // the engine's scroll-to-focused both align to the margin-inset
-        // viewport, so with inner padding they overshoot left by the gutter
-        // width and then visibly drift back to the rest position.
+        // The gutter is a content *margin*, not padding inside the scroll
+        // content, for two reasons. On tvOS, programmatic
+        // `scrollTo(anchor: .leading)` and the engine's scroll-to-focused both
+        // align to the margin-inset viewport, so inner padding makes them
+        // overshoot left by the gutter width and visibly drift back. And
+        // everywhere, `containerRelativeFrame` measures the scroll view rather
+        // than the inset content, so the margin is what lets the next card
+        // peek past the edge — the cue that the row scrolls at all.
         .contentMargins(.horizontal, ContinuumTheme.safePadding, for: .scrollContent)
+        #if os(tvOS)
         // tvOS focus lift expands cards on focus — give them breathing room
         // so they don't clip against the row above/below.
         .scrollClipDisabled()
@@ -229,6 +212,9 @@ struct MediaRow: View {
             firstItemId: items.first?.contentId,
             priority: defaultFocusPriority
         )
+        // `resetFocus(in:)` re-resolves within this scope, which is what makes
+        // the default-focus preference above fire for a programmatic kick.
+        .focusScope(rowFocusScope)
         // The programmatic focus kick needs the scroll proxy (it scrolls the
         // strip home before claiming), so it hangs off the strip rather than
         // the row's outer stack.
@@ -288,10 +274,8 @@ struct MediaRow: View {
     /// "S2 · E10" badge for an episode rendered as a poster, so new episodes
     /// of the same series stay distinguishable. `nil` for non-episodes.
     private func episodeBadge(for item: SectionItem) -> String? {
-        guard item.type.lowercased() == "episode",
-              let season = item.seasonNumber,
-              let episode = item.episodeNumber else { return nil }
-        return "S\(season) · E\(episode)"
+        guard item.type.lowercased() == "episode" else { return nil }
+        return EpisodeCode.format(season: item.seasonNumber, episode: item.episodeNumber)
     }
 
     // MARK: - Metrics
@@ -320,6 +304,32 @@ struct MediaRow: View {
         #endif
     }
 
+    /// Cards visible across the row. Sizing the cells off a count rather than
+    /// a fixed width is what makes the row behave on a resized Mac window and
+    /// in iPad Split View; the scroll view's content margin then lets the next
+    /// card peek, which is the affordance that says the row scrolls.
+    private var resolvedCardCount: Int {
+        if let visibleCardCount { return visibleCardCount }
+        switch layout {
+        case .thumbnail:
+            #if os(tvOS)
+            return 4
+            #elseif os(macOS)
+            return 4
+            #else
+            return 2
+            #endif
+        case .poster, .square:
+            #if os(tvOS)
+            return 6
+            #elseif os(macOS)
+            return 6
+            #else
+            return 3
+            #endif
+        }
+    }
+
     private var cardSpacing: CGFloat {
         #if os(tvOS)
         return 40
@@ -343,31 +353,6 @@ struct MediaRow: View {
 }
 
 #if os(tvOS)
-/// Bridges the row's boundary up/down move commands to the host. Only
-/// attaches an `onMoveCommand` when at least one handler is supplied, so a
-/// row that should stay out of the focus path (e.g. a non-paged row)
-/// never intercepts the commands the focus engine needs for normal
-/// row-to-row movement.
-private struct TVRowMoveHandler: ViewModifier {
-    let onMoveUp: (() -> Void)?
-    let onMoveDown: (() -> Void)?
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if onMoveUp != nil || onMoveDown != nil {
-            content.onMoveCommand { direction in
-                switch direction {
-                case .up: onMoveUp?()
-                case .down: onMoveDown?()
-                default: break
-                }
-            }
-        } else {
-            content
-        }
-    }
-}
-
 private extension View {
     /// Routes both initial and user-initiated (d-pad) focus into the
     /// row's first card. The `.userInitiated` priority is the bit that

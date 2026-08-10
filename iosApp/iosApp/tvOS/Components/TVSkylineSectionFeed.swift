@@ -22,8 +22,6 @@ struct TVSkylineSectionFeed: View {
     /// Whether the top menu currently holds focus. A late content load must
     /// not steal focus while the user is up in the menu.
     var isTopMenuFocused: Bool = false
-    /// Up at the first page hands focus to the top bar.
-    let onTopMenuFocusRequest: (() -> Void)?
     /// Open a content item (detail).
     let onItemTap: (String) -> Void
     /// Optional Home-only action. Library feeds leave this nil.
@@ -115,6 +113,7 @@ struct TVSkylineSectionFeed: View {
                     .padding(.bottom, trailingPreviewPadding)
                 }
                 .scrollTargetBehavior(.viewAligned)
+                .focusGroup()
                 // Animated ride home; the first card's focus claim is
                 // re-asserted by MediaRow until the scroll settles, so the
                 // animation can't lose the claim to mid-flight focus repairs.
@@ -148,13 +147,11 @@ struct TVSkylineSectionFeed: View {
             prefersDefaultFocusOnFirstItem: isFirstRow,
             defaultFocusPriority: .automatic,
             focusRequest: isFirstRow ? contentFocusToken : 0,
-            onMoveUp: isFirstRow ? onTopMenuFocusRequest : nil,
             onItemFocus: { item in
                 previewFocusedItem(item, in: section)
             },
-            cardWidth: ContinuumTheme.Skyline.densePosterCardWidth,
+            visibleCardCount: ContinuumTheme.Skyline.densePosterColumnCount,
             cardVerticalPadding: ContinuumTheme.Skyline.rowBandCardVerticalPadding,
-            onMoveDown: nil
         )
     }
 

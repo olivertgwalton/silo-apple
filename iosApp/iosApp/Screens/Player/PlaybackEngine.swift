@@ -60,20 +60,6 @@ enum PlaybackEngineFailure: Equatable {
     case featureContractLost(String)
 }
 
-enum PlaybackEngineEvent {
-    case timeChanged(Double)
-    case durationChanged(Double)
-    case pauseChanged(Bool)
-    case readyToPlay
-    case failed(PlaybackEngineFailure)
-    case ended
-    case bufferingChanged(Bool)
-    case bufferedAheadChanged(Double)
-    case statsChanged(PlaybackStats)
-    case tracksChanged([PlayerTrack])
-    case chaptersChanged([PlayerChapterInfo])
-}
-
 final class CompatibilityPlayerEngine: PlaybackEngine {
     let kind: PlaybackEngineKind = .playerCoreDirect
     let core: PlayerCore

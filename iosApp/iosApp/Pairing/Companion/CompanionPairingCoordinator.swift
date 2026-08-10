@@ -73,17 +73,20 @@ final class CompanionPairingCoordinator {
         stream: AsyncThrowingStream<PairingMessage, Error>,
         tvName: String = "Apple TV",
         api: any PairingDeviceAuthorizing = PairingDeviceAPI(),
-        deviceModel: String = UIDevice.current.model,
+        deviceModel: String? = nil,
         availableServers: @escaping @MainActor () async -> [ServerEntry] = CompanionPairingCoordinator.serversWithTokens,
-        accessToken: @escaping @MainActor (String) async -> String? = { await TokenStore.shared.getAccessToken(for: $0) }
+        accessToken: (@MainActor (String) async -> String?)? = nil
     ) {
         self.channel = channel
         self.stream = stream
         self.tvName = tvName
         self.api = api
-        self.deviceModel = deviceModel
+        // Resolved here rather than in a default argument: those are evaluated
+        // in a nonisolated context, where `UIDevice.current` and the actor hop
+        // into `TokenStore` are both off-limits.
+        self.deviceModel = deviceModel ?? UIDevice.current.model
         self.availableServers = availableServers
-        self.accessToken = accessToken
+        self.accessToken = accessToken ?? { await TokenStore.shared.getAccessToken(for: $0) }
     }
 
     /// Open the transport for a discovered TV and start its coordinator.

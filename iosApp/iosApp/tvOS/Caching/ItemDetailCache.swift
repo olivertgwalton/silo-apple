@@ -71,11 +71,6 @@ final class ItemDetailCache {
         }
     }
 
-    /// Refresh a single entry. No-op if we don't hold one.
-    func markStale(contentId: String) {
-        refresh(contentId)
-    }
-
     /// Drop every cached entry. Called from `AuthService.signOut` and
     /// profile-switch to keep per-profile userData from leaking across
     /// accounts.

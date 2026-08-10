@@ -97,7 +97,7 @@ struct TVRootHeroBackdrop: View {
             let artHeight = geometry.size.height * artHeightFraction
 
             if let artworkURL, !artworkURL.isEmpty {
-                AsyncImageView(
+                CachedAsyncImage(
                     url: artworkURL,
                     thumbhash: artworkThumbhash,
                     targetSize: CGSize(width: artWidth, height: artHeight),

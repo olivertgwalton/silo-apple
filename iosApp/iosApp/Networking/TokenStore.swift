@@ -368,8 +368,6 @@ actor TokenStore {
 
     func getTemporaryScope() -> TemporaryAuthScope? { temporaryScope }
 
-    func hasTemporaryScope() -> Bool { temporaryScope != nil }
-
     /// Atomically verify a queued request's routing identity and snapshot the
     /// matching credentials. No mutable global scope is installed: the caller
     /// carries this value for one explicit request only.

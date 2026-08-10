@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Collection poster card (Skyline §6.3): a standard 2:3 poster built from the
 /// collection's own artwork, sharing the library Browse poster grammar
-/// (`TVMediaCard` — native `.card` focus lift, `cornerRadius`, centered caption)
+/// (`MediaCard` — native `.card` focus lift, `cornerRadius`, centered caption)
 /// so a collection reads as a first-class browseable tile rather than a
 /// bespoke surface. The caption carries the collection name with an item-count
 /// line beneath it, paralleling the title/year caption on media cards.
@@ -15,25 +15,16 @@ struct TVCollectionPosterCard: View {
     let collection: LibraryCollection
     let action: () -> Void
 
-    /// Poster width; height tracks the 2:3 ratio. Defaults to the standard
-    /// tvOS poster so the collections grid matches the library grid.
-    var cardWidth: CGFloat = ContinuumTheme.posterCardWidth
     /// Default-focus hook for the grid's first card on tab entry.
     var prefersDefaultFocus: Bool = false
     var defaultFocusNamespace: Namespace.ID? = nil
     /// External focus binding so the grid can route d-pad-entry focus onto a
-    /// specific card (mirrors `TVMediaCard.focusBinding`).
+    /// specific card (mirrors `MediaCard.focusedItemId`).
     var focusBinding: FocusState<String?>.Binding? = nil
     var focusContentId: String? = nil
 
     @FocusState private var isFocused: Bool
     @State private var uiCustomization = UICustomizationPreferences.shared
-
-    // Standard 2:3 movie-poster aspect ratio — height tracks width.
-    private var resolvedCardWidth: CGFloat {
-        cardWidth * uiCustomization.cardPresentation.posterSize.scale
-    }
-    private var cardHeight: CGFloat { resolvedCardWidth * 1.5 }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -42,7 +33,6 @@ struct TVCollectionPosterCard: View {
                 caption
             }
         }
-        .frame(width: resolvedCardWidth)
     }
 
     private var posterButton: some View {
@@ -58,22 +48,23 @@ struct TVCollectionPosterCard: View {
 
     // MARK: - Poster
 
-    @ViewBuilder
+    /// Fills the grid cell and derives its height from the poster ratio, the
+    /// same contract as `MediaCard`.
     private var poster: some View {
-        Group {
-            if let url = collection.posterUrl, !url.isEmpty {
-                CachedAsyncImage(
-                    url: url,
-                    targetSize: CGSize(width: resolvedCardWidth, height: cardHeight),
-                    thumbhash: collection.posterThumbhash,
-                    contentMode: .fill
-                )
-            } else {
-                placeholder
+        Color.clear
+            .aspectRatio(ContinuumTheme.posterAspectRatio, contentMode: .fit)
+            .overlay {
+                if let url = collection.posterUrl, !url.isEmpty {
+                    CachedAsyncImage(
+                        url: url,
+                        thumbhash: collection.posterThumbhash,
+                        contentMode: .fill
+                    )
+                } else {
+                    placeholder
+                }
             }
-        }
-        .frame(width: resolvedCardWidth, height: cardHeight)
-        .clipShape(RoundedRectangle(cornerRadius: ContinuumTheme.cornerRadius))
+            .clipShape(RoundedRectangle(cornerRadius: ContinuumTheme.cornerRadius))
     }
 
     /// Art-less fallback: a deterministic gradient + stack glyph so the tile
@@ -98,7 +89,7 @@ struct TVCollectionPosterCard: View {
     // MARK: - Caption
 
     /// Centered name with an item-count line beneath — the collection analogue
-    /// of `TVMediaCard`'s title/year caption.
+    /// of `MediaCard`'s title/year caption.
     private var caption: some View {
         VStack(spacing: 4) {
             Text(collection.name)
@@ -116,7 +107,7 @@ struct TVCollectionPosterCard: View {
             }
         }
         .multilineTextAlignment(.center)
-        .frame(width: resolvedCardWidth, alignment: .center)
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     // MARK: - Derived
@@ -165,7 +156,7 @@ struct TVCollectionPosterCard: View {
 private extension View {
     /// Binds the inner button to the grid's `@FocusState` so the grid can route
     /// d-pad-entry default focus onto this specific card. No-op when no binding
-    /// is supplied. Mirrors `TVMediaCard.applyRailFocus`.
+    /// is supplied. Mirrors `MediaCard.applyRowFocus`.
     @ViewBuilder
     func applyCollectionFocusBinding(_ binding: FocusState<String?>.Binding?, contentId: String?) -> some View {
         if let binding, let contentId {

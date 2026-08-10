@@ -243,32 +243,22 @@ struct TVPlayerControls: View {
                     .fill(Color.white.opacity(0.24))
                     .frame(height: 7)
 
-                let bufferedAhead = max(0, bufferedFraction - progressFraction)
+                let buffered = viewModel.bufferedFraction ?? 0
+                let bufferedAhead = max(0, buffered - viewModel.timelineFraction)
                 if bufferedAhead > 0 {
                     Capsule(style: .continuous)
                         .fill(Color.white.opacity(0.28))
                         .frame(width: width * bufferedAhead, height: 7)
-                        .offset(x: width * progressFraction)
+                        .offset(x: width * viewModel.timelineFraction)
                 }
 
                 Capsule(style: .continuous)
                     .fill(Color.white)
-                    .frame(width: width * progressFraction, height: 7)
+                    .frame(width: width * viewModel.timelineFraction, height: 7)
             }
             .frame(height: 20, alignment: .center)
         }
         .frame(height: 20)
-    }
-
-    private var progressFraction: Double {
-        guard viewModel.duration > 0 else { return 0 }
-        return min(max(scrubberDisplayTime / viewModel.duration, 0), 1)
-    }
-
-    private var bufferedFraction: Double {
-        guard viewModel.duration > 0 else { return 0 }
-        let end = viewModel.currentTime + viewModel.bufferedAheadSeconds
-        return min(max(end / viewModel.duration, 0), 1)
     }
 
     @ViewBuilder
@@ -373,7 +363,7 @@ struct TVPlayerControls: View {
                             .fixedSize(horizontal: true, vertical: false)
                             .frame(width: 136)
                     }
-                    .buttonStyle(TVPillButtonStyle(kind: .secondary, focusTreatment: .compact))
+                    .buttonStyle(DetailPillButtonStyle(kind: .secondary))
                     .focused($focusedIntroAction, equals: .cancel)
                     .accessibilityLabel("Cancel Auto-Skip Intro")
                 }
@@ -396,7 +386,7 @@ struct TVPlayerControls: View {
                 .fixedSize(horizontal: true, vertical: false)
                 .frame(width: 196)
         }
-        .buttonStyle(TVPillButtonStyle(kind: .primary, focusTreatment: .compact))
+        .buttonStyle(DetailPillButtonStyle(kind: .primary))
         .focused($focusedIntroAction, equals: .skip)
         .accessibilityLabel(
             viewModel.introAutoSkipCountdownSeconds == nil ? "Skip Intro" : "Skip Intro Now"
@@ -498,7 +488,7 @@ struct TVPlayerControls: View {
     /// slab. Hidden while we still have no title resolved.
     @ViewBuilder
     private var titleFooter: some View {
-        let title = heroTitleText
+        let title = viewModel.heroTitle
         if !title.isEmpty {
             VStack(alignment: .leading, spacing: 2) {
                 if let series = viewModel.metadata.seriesTitle, !series.isEmpty {
@@ -523,12 +513,6 @@ struct TVPlayerControls: View {
         }
     }
 
-    private var heroTitleText: String {
-        viewModel.metadata.primaryTitle.isEmpty
-            ? viewModel.title
-            : viewModel.metadata.primaryTitle
-    }
-
     @ViewBuilder
     private var timeRow: some View {
         if timeDisplayMode == .currentAndFinish {
@@ -543,10 +527,10 @@ struct TVPlayerControls: View {
             }
         } else {
             HStack {
-                clockText(formatTime(scrubberDisplayTime))
+                clockText(formatTime(viewModel.displayTime))
                 Spacer()
                 if viewModel.duration > 0 {
-                    clockText("−\(formatTime(remainingTime))")
+                    clockText("−\(formatTime(viewModel.remainingTime))")
                 }
             }
         }
@@ -559,17 +543,9 @@ struct TVPlayerControls: View {
             .monospacedDigit()
     }
 
-    private var scrubberDisplayTime: Double {
-        viewModel.isScrubbing ? viewModel.scrubPreviewTime : viewModel.currentTime
-    }
-
-    private var remainingTime: Double {
-        max(0, viewModel.duration - scrubberDisplayTime)
-    }
-
     private func estimatedFinishDate(from now: Date) -> Date {
         let speed = max(viewModel.settings.playbackSpeed, 0.1)
-        return now.addingTimeInterval(remainingTime / speed)
+        return now.addingTimeInterval(viewModel.remainingTime / speed)
     }
 
     private func formatClockTime(_ date: Date) -> String {

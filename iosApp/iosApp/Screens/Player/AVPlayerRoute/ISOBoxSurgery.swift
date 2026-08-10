@@ -112,13 +112,6 @@ enum ISOBoxSurgery {
         return nil
     }
 
-    /// `hdlr` layout (ISO/IEC 14496-12 §8.4.3): 4-byte FullBox header
-    /// (version + flags) then 4 bytes pre_defined (zero) then the 4-byte
-    /// handler_type. For video tracks that's `vide`.
-    static func isVideoTrak(in data: Data, trak: Box) -> Bool {
-        trakHandler(in: data, trak: trak) == "vide"
-    }
-
     private static func trakHandler(in data: Data, trak: Box) -> String? {
         guard let mdia = findChildBox(in: data, parent: trak, childType: "mdia") else { return nil }
         guard let hdlr = findChildBox(in: data, parent: mdia, childType: "hdlr") else { return nil }

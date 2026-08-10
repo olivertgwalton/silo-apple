@@ -15,8 +15,12 @@ import Security
 /// these fixed-name slots instead of reconstructing the registry scheme.
 enum SharedStorage {
     /// Must match the `com.apple.security.application-groups` entitlement
-    /// on both the main app and the extension.
-    static let appGroup = "group.org.siloserver.silo"
+    /// on both the main app and the extension. Resolved from a
+    /// build-expanded Info.plist value for the same reason as the keychain
+    /// group below: contributors signing with their own team can't register
+    /// `group.org.siloserver.silo`, so `Signing/Local.xcconfig` redefines
+    /// `SILO_APP_GROUP` and both sides pick the override up here.
+    static let appGroup = RuntimeConfiguration.appGroup
 
     /// Must match the `keychain-access-groups` entitlement on both sides.
     /// Resolved from a build-expanded Info.plist value so personal-team
@@ -56,6 +60,20 @@ private enum RuntimeConfiguration {
         subsystem: Bundle.main.bundleIdentifier ?? "com.continuum.app",
         category: "RuntimeConfiguration"
     )
+
+    /// Falls back to the paid-team group so a missing or empty
+    /// `SILO_APP_GROUP` expansion behaves exactly as it did before this
+    /// value became configurable.
+    static let appGroup: String = {
+        let fallback = "group.org.siloserver.silo"
+        guard let group = Bundle.main.object(
+            forInfoDictionaryKey: "ContinuumAppGroup"
+        ) as? String, group.hasPrefix("group."), group.count > "group.".count else {
+            logger.error("Missing or invalid ContinuumAppGroup Info.plist value; falling back to \(fallback, privacy: .public).")
+            return fallback
+        }
+        return group
+    }()
 
     static let sharedKeychainAccessGroup: String? = {
         guard let group = Bundle.main.object(

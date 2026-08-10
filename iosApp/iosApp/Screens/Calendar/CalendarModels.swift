@@ -71,8 +71,7 @@ struct CalendarEvent: Codable, Identifiable {
     var episodeSubtitle: String? {
         switch type {
         case "episode":
-            guard let season = seasonNumber, let episode = episodeNumber else { return nil }
-            return "S\(season) · E\(episode)"
+            return EpisodeCode.format(season: seasonNumber, episode: episodeNumber)
         case "season_premiere":
             guard let season = seasonNumber else { return nil }
             return "Season \(season)"

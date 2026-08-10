@@ -28,7 +28,6 @@ struct TVLibraryTypeTabView: View {
     @Binding var selectedPill: TVLibraryPill
     var focusRequest: Int = 0
     var isTopMenuFocused: Bool = false
-    let onTopMenuFocusRequest: (() -> Void)?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -68,15 +67,13 @@ struct TVLibraryTypeTabView: View {
             TVLibraryBrowseView(
                 library: library,
                 focusRequest: focusRequest,
-                isTopMenuFocused: isTopMenuFocused,
-                onMoveUp: onTopMenuFocusRequest
+                isTopMenuFocused: isTopMenuFocused
             )
         case .collections:
             TVLibraryCollectionsView(
                 library: library,
                 focusRequest: focusRequest,
-                isTopMenuFocused: isTopMenuFocused,
-                onMoveUp: onTopMenuFocusRequest
+                isTopMenuFocused: isTopMenuFocused
             )
         case .browse:
             TVLibraryGridView(
@@ -88,8 +85,7 @@ struct TVLibraryTypeTabView: View {
                 showsAlphabetRail: true,
                 topContentInset: ContinuumTheme.Skyline.libraryContentTopInset,
                 focusRequest: focusRequest,
-                isTopMenuFocused: isTopMenuFocused,
-                onTopMenuFocusRequest: onTopMenuFocusRequest
+                isTopMenuFocused: isTopMenuFocused
             )
         }
     }

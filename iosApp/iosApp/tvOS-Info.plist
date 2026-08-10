@@ -34,6 +34,8 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ContinuumAppGroup</key>
+	<string>$(SILO_APP_GROUP)</string>
 	<key>ContinuumKeychainAccessGroup</key>
 	<string>$(AppIdentifierPrefix)org.siloserver.silo.shared</string>
 	<key>ITSAppUsesNonExemptEncryption</key>

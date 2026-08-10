@@ -11,7 +11,7 @@ import SwiftUI
 /// (Option C v2).
 ///
 /// Focus: the action row is a flat set of sibling `Button`s so the tvOS focus
-/// engine owns movement (native-graph model, per `docs/tvos-focus.md`). We
+/// engine owns movement (native-graph model). We
 /// seed initial focus onto Resume with `@FocusState` + `defaultFocus` because
 /// geometry would otherwise pick the (higher) first control inconsistently.
 /// Below-fold rows/rails are ordinary vertical focus progression.
@@ -111,7 +111,7 @@ struct TVAudiobookDetailView: View {
     private var background: some View {
         ZStack {
             if let url = detail.posterUrl, !url.isEmpty {
-                AsyncImageView(
+                CachedAsyncImage(
                     url: url,
                     thumbhash: detail.posterThumbhash,
                     targetSize: CGSize(width: 600, height: 600),
@@ -157,7 +157,7 @@ struct TVAudiobookDetailView: View {
     private var cover: some View {
         Group {
             if let url = detail.posterUrl, !url.isEmpty {
-                AsyncImageView(
+                CachedAsyncImage(
                     url: url,
                     thumbhash: detail.posterThumbhash,
                     targetSize: CGSize(width: 460, height: 460),
@@ -278,7 +278,7 @@ struct TVAudiobookDetailView: View {
                 .lineLimit(1)
             if let line2 {
                 Text(line2)
-                    .font(.system(size: 22))
+                    .font(.continuumCaption)
                     .foregroundColor(.white.opacity(0.55))
                     .lineLimit(1)
             }
@@ -304,7 +304,7 @@ struct TVAudiobookDetailView: View {
 
     private var actionRow: some View {
         HStack(spacing: 24) {
-            TVPrimaryPillButton(
+            DetailPillButton(
                 icon: model.primaryIcon,
                 title: model.primaryLabel
             ) {
@@ -314,13 +314,13 @@ struct TVAudiobookDetailView: View {
             .onAppear(perform: claimInitialActionFocus)
 
             if model.showsChapters {
-                TVSecondaryPillButton(icon: "list.bullet", title: "Chapters") {
+                DetailPillButton(icon: "list.bullet", title: "Chapters") {
                     showChapters = true
                 }
                 .focused($focusedAction, equals: .chapters)
             }
 
-            TVSecondaryPillButton(icon: "arrow.counterclockwise", title: "Start Over") {
+            DetailPillButton(icon: "arrow.counterclockwise", title: "Start Over") {
                 audioStore.play(contentId: detail.contentId, restart: true)
             }
             .focused($focusedAction, equals: .startOver)

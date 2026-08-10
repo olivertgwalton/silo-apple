@@ -1117,18 +1117,6 @@ final class PlayerSettings {
         return defaultValue
     }
 
-    private func legacyBool(key: String, legacyKey: String? = nil, defaultValue: Bool) -> Bool {
-        if defaults.object(forKey: key) != nil {
-            return defaults.bool(forKey: key)
-        }
-        if let legacyKey, defaults.object(forKey: legacyKey) != nil {
-            let legacyValue = defaults.bool(forKey: legacyKey)
-            defaults.set(legacyValue, forKey: key)
-            return legacyValue
-        }
-        return defaultValue
-    }
-
     /// The cached resolution axis, tolerating a compound value written by a
     /// build that stored the tier id.
     ///

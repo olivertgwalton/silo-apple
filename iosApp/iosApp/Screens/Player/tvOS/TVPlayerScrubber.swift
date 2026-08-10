@@ -34,8 +34,6 @@ struct TVPlayerScrubber: View {
 
     private static let scrubBackwardStep: Double = 10
     private static let scrubForwardStep: Double = 30
-    private static let timelineHoldBackwardStep: Double = 2
-    private static let timelineHoldForwardStep: Double = 2
     private static let timelineAutoSeekTickNanos: UInt64 = 100_000_000
     private static let timelineAutoSeekBaseStep: Double = 2
     private static let timelineAutoSeekRates = [-32, -16, -8, -4, -2, -1, 1, 2, 4, 8, 16, 32]
@@ -68,25 +66,6 @@ struct TVPlayerScrubber: View {
     /// Reserved vertical footprint for the largest focused puck/ticks so
     /// focus state cannot resize the transport stack.
     private static let trackStackHeight: CGFloat = 56
-
-    /// Playhead fraction as rendered on the bar — reflects the scrub preview
-    /// while scrubbing so the white fill tracks the user's nudges instead of
-    /// the underlying playback position.
-    private var progressFraction: Double {
-        guard viewModel.duration > 0 else { return 0 }
-        let t = viewModel.isScrubbing ? viewModel.scrubPreviewTime : viewModel.currentTime
-        return min(max(t / viewModel.duration, 0), 1)
-    }
-
-    private var bufferedFraction: Double {
-        guard viewModel.duration > 0 else { return 0 }
-        let end = viewModel.currentTime + viewModel.bufferedAheadSeconds
-        return min(max(end / viewModel.duration, 0), 1)
-    }
-
-    private var displayTime: Double {
-        viewModel.isScrubbing ? viewModel.scrubPreviewTime : viewModel.currentTime
-    }
 
     var body: some View {
         // Plain `.focusable(true)` rather than a `Button`: tvOS's built-in
@@ -167,7 +146,7 @@ struct TVPlayerScrubber: View {
                 }
             }
             .accessibilityLabel("Scrubber")
-            .accessibilityValue(Text(formatTime(displayTime)))
+            .accessibilityValue(Text(formatTime(viewModel.displayTime)))
     }
 
     // MARK: - Bar
@@ -190,7 +169,7 @@ struct TVPlayerScrubber: View {
                 // Played / scrub-preview fill.
                 Capsule(style: .continuous)
                     .fill(Color.white)
-                    .frame(width: width * progressFraction, height: trackHeight)
+                    .frame(width: width * viewModel.timelineFraction, height: trackHeight)
 
                 // Buffered-ahead sliver: only the region *between* the
                 // playhead and the end of the loaded range. Rendering from
@@ -198,12 +177,12 @@ struct TVPlayerScrubber: View {
                 // and mis-represent the semantic — buffer is inherently a
                 // forward-looking indicator. Stays 0-width on the CoreMedia
                 // path where `bufferedAheadSeconds` is always 0.
-                let bufferedAhead = max(0, bufferedFraction - progressFraction)
+                let bufferedAhead = max(0, (viewModel.bufferedFraction ?? 0) - viewModel.timelineFraction)
                 if bufferedAhead > 0 {
                     Capsule(style: .continuous)
                         .fill(Color.white.opacity(0.28))
                         .frame(width: width * bufferedAhead, height: trackHeight)
-                        .offset(x: width * progressFraction)
+                        .offset(x: width * viewModel.timelineFraction)
                 }
 
                 // Chapter ticks float on top of the fill — white at full
@@ -220,7 +199,7 @@ struct TVPlayerScrubber: View {
         }
         .frame(height: Self.trackStackHeight)
         .animation(.easeOut(duration: ContinuumTheme.fastDuration), value: isFocused)
-        // Deliberately no animation on `progressFraction` — it animated every
+        // Deliberately no animation on `viewModel.timelineFraction` — it animated every
         // tick of the playhead AND every transition between scrub preview and
         // live position, which turned any state drift (keyframe snapping,
         // filter-release handoff) into a visible 100 ms slide. With it
@@ -268,7 +247,7 @@ struct TVPlayerScrubber: View {
                 Circle().stroke(Color.white.opacity(isTimelineScrubbing ? 0.55 : 0), lineWidth: 8)
             )
             .shadow(color: .black.opacity(0.48), radius: 8, y: 3)
-            .offset(x: barWidth * progressFraction - size / 2)
+            .offset(x: barWidth * viewModel.timelineFraction - size / 2)
     }
 
     private var trackHeight: CGFloat {
@@ -343,7 +322,7 @@ struct TVPlayerScrubber: View {
         guard !isTimelineScrubbing else { return }
         guard viewModel.duration > 0 else { return }
         resumePlaybackAfterTimelineSelection = viewModel.isPlaying
-        let base = viewModel.isScrubbing ? viewModel.scrubPreviewTime : viewModel.currentTime
+        let base = viewModel.displayTime
         viewModel.beginScrub(fraction: min(max(base / viewModel.duration, 0), 1))
         isTimelineScrubbing = true
     }
@@ -418,7 +397,7 @@ struct TVPlayerScrubber: View {
             guard abs(panAccumulated) >= Self.panDeadzone else { return }
             panEngaged = true
         }
-        let base = viewModel.isScrubbing ? viewModel.scrubPreviewTime : viewModel.currentTime
+        let base = viewModel.displayTime
         let deltaSeconds = Double(deltaX / Self.panPointsForFullTimeline) * viewModel.duration
         let target = min(max(base + deltaSeconds, 0), viewModel.duration)
         if target != base {
@@ -461,17 +440,12 @@ struct TVPlayerScrubber: View {
     }
 
     private func stepTimeline(by delta: Double) {
-        let base = viewModel.isScrubbing ? viewModel.scrubPreviewTime : viewModel.currentTime
+        let base = viewModel.displayTime
         let target = min(max(base + delta, 0), viewModel.duration)
         if target != base {
             hasTimelineSelectionMoved = true
         }
         viewModel.updateScrub(fraction: target / viewModel.duration)
-    }
-
-    private func stepTimelineHold(direction: Int) {
-        let step = direction < 0 ? -Self.timelineHoldBackwardStep : Self.timelineHoldForwardStep
-        stepTimeline(by: step)
     }
 
     private func formatTime(_ seconds: Double) -> String {

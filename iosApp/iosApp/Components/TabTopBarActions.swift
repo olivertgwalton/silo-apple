@@ -117,5 +117,6 @@ private struct ProfileAvatarMenu: View {
             )
         }
         .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
     }
 }

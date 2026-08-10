@@ -17,18 +17,16 @@ struct SectionRow: View {
     /// when an unrelated view (e.g. the tvOS top menu) hands focus down into
     /// this row rather than the user d-padding into it.
     var focusRequest: Int = 0
-    var onMoveUp: (() -> Void)? = nil
     /// tvOS-only: card-focus reports forwarded from `MediaRow` so hosts
     /// can drive the Skyline focus marquee with `(item, row title)`.
     var onItemFocus: ((SectionItem) -> Void)? = nil
     /// Optional poster/square card width forwarded to `MediaRow` —
     /// Skyline's dense landing rows (§5.6) pass a compact width.
-    var cardWidth: CGFloat? = nil
+    var visibleCardCount: Int? = nil
     /// Optional tvOS card-strip padding override. Skyline uses this to keep
     /// the focused row short enough for the next row title preview.
     var cardVerticalPadding: CGFloat? = nil
     /// Down at the row boundary — forwarded to `MediaRow` for the section pager.
-    var onMoveDown: (() -> Void)? = nil
 
     #if os(tvOS)
     @Environment(AppRouter.self) private var router
@@ -98,11 +96,9 @@ struct SectionRow: View {
             onSetWatched: { item, played in
                 await setWatched(item, played: played)
             },
-            onMoveUp: onMoveUp,
             onItemFocus: onItemFocus,
-            cardWidth: cardWidth,
+            visibleCardCount: visibleCardCount,
             cardVerticalPadding: cardVerticalPadding,
-            onMoveDown: onMoveDown
         )
     }
 

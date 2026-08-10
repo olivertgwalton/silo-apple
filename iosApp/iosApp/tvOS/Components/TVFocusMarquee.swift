@@ -144,7 +144,8 @@ extension TVMarqueeContent {
 
     private static func episodeToken(season: Int?, episode: Int?) -> String? {
         switch (season, episode) {
-        case let (season?, episode?): return "S\(season) E\(episode)"
+        case let (season?, episode?):
+            return EpisodeCode.format(season: season, episode: episode, style: .compact)
         case let (season?, nil): return "Season \(season)"
         case let (nil, episode?): return "Episode \(episode)"
         default: return nil

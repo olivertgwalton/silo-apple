@@ -15,14 +15,7 @@ struct DownloadsStorageHeader: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 13) {
-            (
-                Text(DownloadFormatting.bytes(used))
-                    .font(.system(size: 26, weight: .bold))
-                    .foregroundColor(.continuumOnSurface)
-                + Text(contextSuffix)
-                    .font(.system(size: 14))
-                    .foregroundColor(.continuumSecondaryText)
-            )
+            Text("\(usedText)\(contextSuffixText)")
 
             if activeCount > 0 {
                 Text(inProgressLine)
@@ -46,6 +39,20 @@ struct DownloadsStorageHeader: View {
                 )
         )
         .padding(.horizontal, 16)
+    }
+
+    private var usedText: Text {
+        Text(DownloadFormatting.bytes(used))
+            .font(.system(size: 26, weight: .bold))
+            .foregroundColor(.continuumOnSurface)
+    }
+
+    /// Interpolated into the hero line rather than concatenated with `+`,
+    /// which SwiftUI deprecated in iOS 26.
+    private var contextSuffixText: Text {
+        Text(contextSuffix)
+            .font(.system(size: 14))
+            .foregroundColor(.continuumSecondaryText)
     }
 
     private var contextSuffix: String {
@@ -196,6 +203,8 @@ struct DownloadSortControl: View {
                 }
                 .foregroundColor(.continuumOnSurface)
             }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
 
             Spacer()
 

@@ -168,7 +168,7 @@ struct AudiobookDetailContent: View {
     private var phoneBackdrop: some View {
         ZStack {
             if let url = detail.posterUrl, !url.isEmpty {
-                AsyncImageView(
+                CachedAsyncImage(
                     url: url,
                     thumbhash: detail.posterThumbhash,
                     targetSize: CGSize(width: 420, height: 420),
@@ -201,7 +201,7 @@ struct AudiobookDetailContent: View {
     private var phoneCover: some View {
         Group {
             if let url = detail.posterUrl, !url.isEmpty {
-                AsyncImageView(
+                CachedAsyncImage(
                     url: url,
                     thumbhash: detail.posterThumbhash,
                     targetSize: CGSize(width: phoneCoverSize, height: phoneCoverSize),
@@ -255,7 +255,7 @@ struct AudiobookDetailContent: View {
 
             if let authorSummary {
                 Text(authorSummary)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.continuumHeadline)
                     .foregroundColor(.continuumOnSurface)
                     .multilineTextAlignment(.center)
                     .padding(.top, 12)
@@ -290,7 +290,7 @@ struct AudiobookDetailContent: View {
                         .foregroundColor(.continuumOnSurface)
                     Spacer()
                     Text("\(PlayerTimeFormatter.formatRuntime(timeLeftSeconds)) left")
-                        .font(.system(size: 12))
+                        .font(.continuumCaption)
                         .foregroundStyle(.secondary)
                 }
                 .padding(.horizontal, 4)
@@ -312,7 +312,7 @@ struct AudiobookDetailContent: View {
     private var phoneSecondaryControls: some View {
         HStack(alignment: .top, spacing: 26) {
             phoneControl("Start Over") {
-                PhoneCircleActionButton(
+                DetailCircleActionButton(
                     icon: "arrow.counterclockwise",
                     accessibilityLabel: "Start Over"
                 ) {
@@ -326,7 +326,7 @@ struct AudiobookDetailContent: View {
 
             if !otherNarrations.isEmpty {
                 phoneControl("Narration") {
-                    PhoneCircleMenuButton(icon: "person.wave.2", accessibilityLabel: "Narration") {
+                    DetailCircleMenuButton(icon: "person.wave.2", accessibilityLabel: "Narration") {
                         ForEach(otherNarrations) { narration in
                             Button {
                                 onNavigateToItem(narration.contentId)
@@ -366,6 +366,8 @@ struct AudiobookDetailContent: View {
                         .overlay(Circle().stroke(Color.white.opacity(0.25), lineWidth: 1))
                 )
         }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
         .accessibilityLabel("Playback Speed")
     }
 
@@ -377,7 +379,7 @@ struct AudiobookDetailContent: View {
         VStack(spacing: 7) {
             content()
             Text(caption)
-                .font(.system(size: 11))
+                .font(.continuumSmall)
                 .foregroundStyle(.secondary)
         }
     }
@@ -510,7 +512,7 @@ struct AudiobookDetailContent: View {
     private var phoneDetailsLine: some View {
         if !formatTokens.isEmpty {
             Text(formatTokens.joined(separator: "  ·  "))
-                .font(.system(size: 12))
+                .font(.continuumCaption)
                 .foregroundColor(.continuumOnSurface.opacity(0.4))
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -575,7 +577,7 @@ struct AudiobookDetailContent: View {
     @ViewBuilder
     private func relatedPoster(_ item: AudiobookRelatedItem) -> some View {
         if let url = item.posterUrl, !url.isEmpty {
-            AsyncImageView(
+            CachedAsyncImage(
                 url: url,
                 targetSize: CGSize(width: relatedPosterWidth, height: relatedPosterHeight),
                 contentMode: .fill

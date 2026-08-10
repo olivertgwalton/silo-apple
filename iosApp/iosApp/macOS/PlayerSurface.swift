@@ -5,15 +5,15 @@ import SwiftUI
 
 struct PlayerSurface: NSViewRepresentable {
     let player: PlayerCore
+    var videoGravity: AVLayerVideoGravity = .resizeAspect
 
     func makeNSView(context: Context) -> PlayerSurfaceHostView {
-        let view = PlayerSurfaceHostView()
-        view.attach(player: player)
-        return view
+        PlayerSurfaceHostView()
     }
 
     func updateNSView(_ nsView: PlayerSurfaceHostView, context: Context) {
         nsView.attach(player: player)
+        nsView.setVideoGravity(videoGravity)
     }
 
     static func dismantleNSView(_ nsView: PlayerSurfaceHostView, coordinator: ()) {
@@ -85,6 +85,14 @@ final class PlayerSurfaceHostView: NSView {
             self.updateEDR(sigPeak: peak)
         }
         updateEDR(sigPeak: player.lastSigPeak)
+    }
+
+    /// Subtitle placement is derived from the gravity (see `layout()`), so a
+    /// change has to re-run layout, not just repaint.
+    func setVideoGravity(_ gravity: AVLayerVideoGravity) {
+        guard displayLayer.videoGravity != gravity else { return }
+        displayLayer.videoGravity = gravity
+        needsLayout = true
     }
 
     func detachSubtitleOverlay() {

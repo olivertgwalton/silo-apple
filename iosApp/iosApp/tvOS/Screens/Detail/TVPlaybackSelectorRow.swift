@@ -20,6 +20,15 @@ struct TVPlaybackSelectorRow: View {
         case version
         case audio
         case subtitles
+
+        init(_ kind: PlaybackSelectorKind) {
+            switch kind {
+            case .edition: self = .edition
+            case .version: self = .version
+            case .audio: self = .audio
+            case .subtitles: self = .subtitles
+            }
+        }
     }
 
     let versions: [FileVersion]
@@ -45,10 +54,20 @@ struct TVPlaybackSelectorRow: View {
     @State private var defaultSelectorFocus: SelectorFocus?
     @State private var preferredSubtitleLanguage: String?
 
-    private var editions: [PlaybackEditions.Edition] { PlaybackEditions.editions(from: versions) }
+    private var model: PlaybackSelectorModel {
+        PlaybackSelectorModel(
+            versions: versions,
+            currentVersion: currentVersion,
+            selectedVersionFileId: selectedVersionFileId,
+            selectedAudioTrackIndex: selectedAudioTrackIndex,
+            selectedSubtitleTrackIndex: selectedSubtitleTrackIndex,
+            annotatesAuto: true,
+            subtitleAutoContext: subtitleAutoContext
+        )
+    }
 
     var body: some View {
-        if hasAnySelector {
+        if model.hasAnySelector {
             selectorRow
                 // Stretch the focus section to the full action-area width even
                 // though the buttons sit on the left. Entering a focus section
@@ -85,16 +104,16 @@ struct TVPlaybackSelectorRow: View {
 
     private var selectorRow: some View {
         HStack(spacing: Layout.selectorSpacing) {
-            if shouldShowEditionSelector {
+            if model.isVisible(.edition) {
                 editionSelector
             }
-            if shouldShowVersionValue {
+            if model.isVisible(.version) {
                 versionSelector
             }
-            if shouldShowAudioValue {
+            if model.isVisible(.audio) {
                 audioSelector
             }
-            if shouldShowSubtitleValue {
+            if model.isVisible(.subtitles) {
                 subtitleSelector
             }
         }
@@ -103,78 +122,24 @@ struct TVPlaybackSelectorRow: View {
     /// Leading visible pill — where entry into the row should land once the
     /// post-menu restore default has served its purpose.
     private var firstSelector: SelectorFocus {
-        if shouldShowEditionSelector { return .edition }
-        if shouldShowVersionValue { return .version }
-        if shouldShowAudioValue { return .audio }
-        return .subtitles
-    }
-
-    private var hasAnySelector: Bool {
-        shouldShowEditionSelector
-            || shouldShowVersionValue
-            || shouldShowAudioValue
-            || shouldShowSubtitleValue
-    }
-
-    private var shouldShowEditionSelector: Bool {
-        editions.count > 1
-    }
-
-    private var shouldShowVersionValue: Bool {
-        currentVersion != nil
-    }
-
-    private var shouldEnableVersionSelector: Bool {
-        DetailPlaybackFormatting.shouldEnableVersionSelector(
-            versions: versions,
-            currentVersion: currentVersion
-        )
-    }
-
-    private var shouldShowAudioValue: Bool {
-        DetailPlaybackFormatting.shouldShowAudioValue(version: currentVersion)
-    }
-
-    private var shouldEnableAudioSelector: Bool {
-        DetailPlaybackFormatting.shouldEnableAudioSelector(version: currentVersion)
-    }
-
-    private var shouldShowSubtitleValue: Bool {
-        DetailPlaybackFormatting.shouldShowSubtitleValue(version: currentVersion)
-    }
-
-    private var shouldEnableSubtitleSelector: Bool {
-        DetailPlaybackFormatting.shouldEnableSubtitleSelector(version: currentVersion)
+        SelectorFocus(model.firstKind ?? .subtitles)
     }
 
     // MARK: - Edition
 
-    private var currentEdition: PlaybackEditions.Edition? {
-        DetailPlaybackFormatting.currentEdition(
-            versions: versions,
-            currentVersion: currentVersion
-        )
-    }
-
     private var editionSelector: some View {
-        TVSelectorButton(icon: "rectangle.stack", label: "Edition", value: currentEdition?.label ?? currentVersion?.editionDisplayLabel ?? "Standard") {
-            if editions.isEmpty {
+        TVSelectorButton(icon: "rectangle.stack", label: "Edition", value: model.value(for: .edition)) {
+            if model.editions.isEmpty {
                 Button("Standard") { }.disabled(true)
             } else {
-                ForEach(editions) { edition in
+                ForEach(model.editions) { edition in
                     Button {
-                        let best = DetailVersionSelection.displayVersion(
-                            versions: edition.versions,
-                            selectedFileId: nil,
-                            lastFileId: nil,
-                            preferredQualityId: PlayerSettings.shared.preferredQuality
-                        )
-                        selectVersion(best?.fileId, returningFocusTo: .edition)
+                        selectVersion(model.bestVersion(in: edition)?.fileId, returningFocusTo: .edition)
                     } label: {
                         selectorMenuItem(
                             title: edition.label,
                             detail: "\(edition.versions.count) version\(edition.versions.count == 1 ? "" : "s")",
-                            isSelected: currentEdition?.id == edition.id
+                            isSelected: model.currentEdition?.id == edition.id
                         )
                     }
                 }
@@ -187,9 +152,8 @@ struct TVPlaybackSelectorRow: View {
 
     @ViewBuilder
     private var versionSelector: some View {
-        let summary = DetailPlaybackFormatting.versionShortLabel(currentVersion)
-        let value = selectedVersionFileId == nil ? "Auto: \(summary)" : summary
-        if shouldEnableVersionSelector {
+        let value = model.value(for: .version)
+        if model.isInteractive(.version) {
             TVSelectorButton(
                 icon: "tv",
                 label: "Version",
@@ -198,7 +162,7 @@ struct TVPlaybackSelectorRow: View {
                 Button { selectVersion(nil, returningFocusTo: .version) } label: {
                     selectorMenuItem(title: "Auto", detail: "Best match for this device", isSelected: selectedVersionFileId == nil)
                 }
-                ForEach(scopedVersions) { version in
+                ForEach(model.scopedVersions) { version in
                     Button {
                         selectVersion(version.fileId, returningFocusTo: .version)
                     } label: {
@@ -216,23 +180,12 @@ struct TVPlaybackSelectorRow: View {
         }
     }
 
-    private var scopedVersions: [FileVersion] {
-        DetailPlaybackFormatting.versionSelectorVersions(
-            versions: versions,
-            currentVersion: currentVersion
-        )
-    }
-
     // MARK: - Audio
 
     @ViewBuilder
     private var audioSelector: some View {
-        let value = DetailPlaybackFormatting.audioValueLabel(
-            version: currentVersion,
-            selectedAudioTrackIndex: selectedAudioTrackIndex,
-            annotateAuto: true
-        )
-        if shouldEnableAudioSelector {
+        let value = model.value(for: .audio)
+        if model.isInteractive(.audio) {
             TVSelectorButton(
                 icon: "speaker.wave.2",
                 label: "Audio",
@@ -241,10 +194,7 @@ struct TVPlaybackSelectorRow: View {
                 Button { selectAudioTrack(nil) } label: {
                     selectorMenuItem(title: "Auto", detail: "Use the file default track", isSelected: selectedAudioTrackIndex == nil)
                 }
-                let options = DetailPlaybackFormatting.audioOptions(
-                    version: currentVersion,
-                    selectedAudioTrackIndex: selectedAudioTrackIndex
-                )
+                let options = model.audioOptions()
                 if options.isEmpty {
                     Button("Unknown") { }.disabled(true)
                 } else {
@@ -282,12 +232,8 @@ struct TVPlaybackSelectorRow: View {
 
     @ViewBuilder
     private var subtitleSelector: some View {
-        let value = DetailPlaybackFormatting.subtitleValueLabel(
-            version: currentVersion,
-            selectedSubtitleTrackIndex: selectedSubtitleTrackIndex,
-            autoContext: subtitleAutoContext
-        )
-        if shouldEnableSubtitleSelector {
+        let value = model.value(for: .subtitles)
+        if model.isInteractive(.subtitles) {
             TVSelectorButton(
                 icon: "captions.bubble",
                 label: "Subtitles",
@@ -299,11 +245,7 @@ struct TVPlaybackSelectorRow: View {
                 Button { selectSubtitleTrack(-1) } label: {
                     selectorMenuItem(title: "Off", detail: "Start without subtitles", isSelected: selectedSubtitleTrackIndex == -1)
                 }
-                ForEach(DetailPlaybackFormatting.subtitleOptions(
-                    version: currentVersion,
-                    selectedSubtitleTrackIndex: selectedSubtitleTrackIndex,
-                    preferredLanguage: preferredSubtitleLanguage
-                )) { option in
+                ForEach(model.subtitleOptions(preferredLanguage: preferredSubtitleLanguage)) { option in
                     if option.isSelectable, let selectionIndex = option.selectionIndex {
                         Button { selectSubtitleTrack(selectionIndex) } label: {
                             selectorMenuItem(title: option.title, detail: option.detail, isSelected: option.isSelected)
@@ -397,7 +339,7 @@ private struct TVSelectorButton<MenuContent: View>: View {
             }
         }
         .menuStyle(.button)
-        .buttonStyle(TVPillButtonStyle(kind: .secondary, focusTreatment: .compact))
+        .buttonStyle(DetailPillButtonStyle(kind: .secondary))
     }
 }
 
@@ -421,7 +363,7 @@ private struct TVSelectorValue: View {
                 Text(value).font(.system(size: 22, weight: .semibold)).lineLimit(1)
             }
         }
-        .buttonStyle(TVPillButtonStyle(kind: .secondary, focusTreatment: .compact))
+        .buttonStyle(DetailPillButtonStyle(kind: .secondary))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(label), \(value)")
     }

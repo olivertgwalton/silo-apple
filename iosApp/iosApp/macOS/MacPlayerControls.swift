@@ -1,5 +1,4 @@
 #if os(macOS)
-import AppKit
 import Foundation
 import SwiftUI
 
@@ -7,6 +6,8 @@ struct MacPlayerControls: View {
     let viewModel: PlayerViewModel
     @Binding var isOptionsPresented: Bool
     @Binding var selectedOptionsTab: MacPlayerOptionsPanel.Tab
+    let isFullScreen: Bool
+    let onToggleFullScreen: () -> Void
     let onDismiss: () -> Void
 
     var body: some View {
@@ -16,6 +17,13 @@ struct MacPlayerControls: View {
             bottomControls
         }
         .padding(20)
+    }
+
+    /// The window's title bar is hidden, so its traffic lights float over the
+    /// top-left of the video. Indent the title past them when windowed; in
+    /// fullscreen they are gone and the space is ours again.
+    private var trafficLightInset: CGFloat {
+        isFullScreen ? 0 : 68
     }
 
     private var topBar: some View {
@@ -52,12 +60,14 @@ struct MacPlayerControls: View {
 
             iconButton("xmark", help: "Close", action: onDismiss)
         }
-        .padding(.horizontal, 14)
+        .padding(.leading, 14 + trafficLightInset)
+        .padding(.trailing, 14)
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(Color.black.opacity(0.50))
         )
+        .animation(.easeOut(duration: 0.16), value: isFullScreen)
     }
 
     private var bottomControls: some View {
@@ -75,6 +85,10 @@ struct MacPlayerControls: View {
                     Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
                         .font(.system(size: 18, weight: .semibold))
                         .frame(width: 38, height: 32)
+                        // `.plain` hit-tests the rendered glyph, not the frame
+                        // around it — without this only the middle of the
+                        // button responds to a click.
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.black)
@@ -124,9 +138,13 @@ struct MacPlayerControls: View {
                     .foregroundStyle(.white.opacity(0.70))
                     .monospacedDigit()
 
-                iconButton("arrow.up.left.and.arrow.down.right", help: "Fullscreen") {
-                    NSApp.keyWindow?.toggleFullScreen(nil)
-                }
+                iconButton(
+                    isFullScreen
+                        ? "arrow.down.right.and.arrow.up.left"
+                        : "arrow.up.left.and.arrow.down.right",
+                    help: isFullScreen ? "Exit Full Screen" : "Enter Full Screen",
+                    action: onToggleFullScreen
+                )
             }
         }
         .padding(14)
@@ -150,6 +168,7 @@ struct MacPlayerControls: View {
             Image(systemName: systemName)
                 .font(.system(size: 15, weight: .semibold))
                 .frame(width: 31, height: 30)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .foregroundStyle(.white)

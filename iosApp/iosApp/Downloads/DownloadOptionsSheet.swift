@@ -117,6 +117,8 @@ struct DownloadOptionsSheet: View {
         #if os(iOS)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        .presentationSizing(.form)
+        .presentationDragIndicator(.visible)
         #endif
     }
 

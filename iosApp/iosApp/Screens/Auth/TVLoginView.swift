@@ -467,20 +467,6 @@ struct TVLoginView: View {
 // white-on-white. Taking focus as an explicit parameter from the owning
 // view's `@FocusState` sidesteps the issue. Shared with `TVServerSetupView`.
 
-struct TVAuthFieldChrome: ViewModifier {
-    let isFocused: Bool
-
-    func body(content: Content) -> some View {
-        content
-            .font(.continuumBody)
-            .foregroundStyle(isFocused ? Color.continuumBackground : Color.continuumOnSurface)
-            .tint(isFocused ? Color.continuumBackground : Color.continuumOnSurface)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 16)
-            .continuumInputChrome(isFocused: isFocused)
-    }
-}
-
 // MARK: - Local button styles
 
 /// Square icon-only focus affordance for the password show/hide toggle.

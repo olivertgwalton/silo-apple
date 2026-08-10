@@ -17,7 +17,6 @@ struct SeasonDetailContent<BelowOverview: View>: View {
     let seasons: [Season]
     let selectedSeason: Season?
     let episodes: [EpisodeListItem]
-    let episodesBySeason: [Int: [EpisodeListItem]]
     let isLoadingEpisodes: Bool
     let selectedNextUpFileId: Int?
     let selectedNextUpAudioTrackIndex: Int?
@@ -78,14 +77,13 @@ struct SeasonDetailContent<BelowOverview: View>: View {
             backdropUrl: detail.backdropUrl,
             backdropThumbhash: detail.backdropThumbhash,
             eyebrow: detail.seriesTitle,
-            sourceTokens: PhoneHeroMetadata.seasonSourceTokens(
+            sourceTokens: DetailHeroMetadata.seasonSourceTokens(
                 from: detail,
                 episodeCount: episodes.count
             ),
             ratingChip: nil,
             overview: detail.overview,
             factsLine: [],
-            overlayData: OverlayData.from(detail),
             actions: { actionStack },
             belowOverview: belowOverview
         )
@@ -95,7 +93,7 @@ struct SeasonDetailContent<BelowOverview: View>: View {
     private var actionStack: some View {
         VStack(spacing: 12) {
             if let nextUp = nextUpEpisode {
-                PhonePrimaryPillButton(
+                DetailPillButton(
                     icon: "play.fill",
                     title: playButtonLabel(for: nextUp),
                     action: { handlePlayTap(for: nextUp) },
@@ -104,7 +102,7 @@ struct SeasonDetailContent<BelowOverview: View>: View {
             }
             circleRow
             if nextUpEpisode != nil, let effectiveNextUpVersion {
-                PhonePlaybackSelectorRow(
+                PlaybackSelectorRow(
                     versions: nextUpVersions,
                     currentVersion: effectiveNextUpVersion,
                     selectedVersionFileId: selectedNextUpFileId,
@@ -129,7 +127,7 @@ struct SeasonDetailContent<BelowOverview: View>: View {
 
     private var circleRow: some View {
         HStack(spacing: 14) {
-            PhoneCircleActionButton(
+            DetailCircleActionButton(
                 icon: "heart",
                 iconActive: "heart.fill",
                 isActive: isFavorite,
@@ -137,7 +135,7 @@ struct SeasonDetailContent<BelowOverview: View>: View {
                 action: onToggleFavorite
             )
 
-            PhoneCircleActionButton(
+            DetailCircleActionButton(
                 icon: "bookmark",
                 iconActive: "bookmark.fill",
                 isActive: inWatchlist,
@@ -145,7 +143,7 @@ struct SeasonDetailContent<BelowOverview: View>: View {
                 action: onToggleWatchlist
             )
 
-            PhoneCircleActionButton(
+            DetailCircleActionButton(
                 icon: "checkmark.circle",
                 iconActive: "checkmark.circle.fill",
                 isActive: isWatched,
@@ -162,7 +160,7 @@ struct SeasonDetailContent<BelowOverview: View>: View {
             }
 
             if let seriesId = detail.seriesId {
-                PhoneCircleMenuButton(accessibilityLabel: "More options") {
+                DetailCircleMenuButton(accessibilityLabel: "More options") {
                     Button {
                         onNavigateToItem(seriesId)
                     } label: {
@@ -230,18 +228,16 @@ struct SeasonDetailContent<BelowOverview: View>: View {
     @ViewBuilder
     private var episodesSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            PhoneSectionHeader(label: "This Season", title: "Episodes")
+            DetailSectionHeader(label: "This Season", title: "Episodes")
                 .padding(.horizontal, ContinuumTheme.safePadding)
 
             PhoneSeasonEpisodeBrowser(
                 seasons: seasons,
                 selectedSeason: selectedSeason,
                 episodes: episodes,
-                episodesBySeason: episodesBySeason,
                 isLoadingEpisodes: isLoadingEpisodes,
                 onSelectSeason: onSelectSeason,
-                onSelectEpisode: onEpisodeTap,
-                allowsSeasonPaging: false
+                onSelectEpisode: onEpisodeTap
             )
         }
     }
@@ -249,16 +245,16 @@ struct SeasonDetailContent<BelowOverview: View>: View {
     @ViewBuilder
     private func castSection(cast: [CastMember]) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            PhoneSectionHeader(title: "Cast & Crew")
+            DetailSectionHeader(title: "Cast & Crew")
                 .padding(.horizontal, ContinuumTheme.safePadding)
-            PhoneCastRail(cast: cast, onTap: onPersonTap)
+            DetailCastRail(cast: cast, onTap: onPersonTap)
         }
     }
 
     private var detailsSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            PhoneSectionHeader(title: "Details")
-            PhoneDetailFactsSection(detail: detail)
+            DetailSectionHeader(title: "Details")
+            DetailFactsSection(detail: detail)
         }
     }
 }

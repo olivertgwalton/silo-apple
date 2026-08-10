@@ -49,9 +49,10 @@ class AppRouter {
 
     // MARK: - Player Presentation
 
-    /// Identifiable payload for presenting the player as a full-screen cover.
-    /// Used on iOS/iPadOS where pushing into the detail pane would box video
-    /// into split-view navigation chrome.
+    /// Identifiable payload for presenting the player outside the browsing
+    /// navigation stack — a full-screen cover on iOS/iPadOS and tvOS, a
+    /// dedicated window on macOS. Pushing it into the stack instead would box
+    /// video inside split-view navigation chrome.
     struct PlayerPresentation: Identifiable, Equatable {
         let id = UUID()
         let contentId: String
@@ -87,9 +88,9 @@ class AppRouter {
         requestedTab = tab
     }
 
-    /// Present the player using the platform-appropriate path. iOS/iPadOS use
-    /// a full-window cover; macOS pushes into the main navigation content so
-    /// playback replaces the detail pane instead of opening in a sheet.
+    /// Request the player. Every platform now publishes the same payload and
+    /// lets its shell choose the presentation — a full-window cover on
+    /// iOS/tvOS, a dedicated window on macOS (see `MainTabView`).
     func presentPlayer(
         contentId: String,
         fileId: Int? = nil,
@@ -109,24 +110,6 @@ class AppRouter {
             attrs: ["target": .string("player"), "action": .string("present")]
         )
         #endif
-        #if os(macOS)
-        if let fileId {
-            navigate(to: .playerWithFile(
-                contentId: contentId,
-                fileId: fileId,
-                audioTrackIndex: audioTrackIndex,
-                subtitleTrackIndex: subtitleTrackIndex,
-                startFromBeginning: startFromBeginning,
-                resumePosition: resumePosition
-            ))
-        } else {
-            navigate(to: .player(
-                contentId: contentId,
-                startFromBeginning: startFromBeginning,
-                resumePosition: resumePosition
-            ))
-        }
-        #else
         presentedPlayer = PlayerPresentation(
             contentId: contentId,
             fileId: fileId,
@@ -138,11 +121,10 @@ class AppRouter {
             posterURL: posterURL,
             backdropURL: backdropURL
         )
-        #endif
     }
 
-    /// Present offline playback of a completed download. iOS/iPadOS use a
-    /// full-window cover; macOS pushes the offline player route.
+    /// Request offline playback of a completed download, through the same
+    /// shell-chosen presentation as `presentPlayer`.
     func presentOfflinePlayer(
         downloadId: String,
         contentId: String,
@@ -157,14 +139,6 @@ class AppRouter {
             attrs: ["target": .string("offlinePlayer"), "action": .string("present")]
         )
         #endif
-        #if os(macOS)
-        navigate(to: .offlinePlayer(
-            downloadId: downloadId,
-            contentId: contentId,
-            startFromBeginning: startFromBeginning,
-            resumePosition: resumePosition
-        ))
-        #else
         presentedPlayer = PlayerPresentation(
             contentId: contentId,
             fileId: nil,
@@ -177,7 +151,6 @@ class AppRouter {
             posterURL: nil,
             backdropURL: nil
         )
-        #endif
     }
 
     // MARK: - Actions

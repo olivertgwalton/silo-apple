@@ -32,6 +32,8 @@ struct MacPlayerOptionsPanel: View {
                     onDismiss()
                 } label: {
                     Image(systemName: "xmark")
+                        .frame(width: 24, height: 24)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .help("Close options")
@@ -187,6 +189,7 @@ struct MacPlayerOptionsPanel: View {
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
                     .fill(selected ? Color.white.opacity(0.14) : Color.white.opacity(0.05))
             )
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

@@ -34,11 +34,20 @@ struct CalendarEventCard: View {
     var focusedItemId: FocusState<String?>.Binding? = nil
     @State private var uiCustomization = UICustomizationPreferences.shared
 
+    /// Fixed poster width. The calendar day shelf is a free-scrolling strip
+    /// with its own rhythm rather than a grid or a `MediaRow`, so this card
+    /// keeps an absolute size instead of deriving one from a container.
     private var cardWidth: CGFloat {
-        ContinuumTheme.posterCardWidth * uiCustomization.cardPresentation.posterSize.scale
+        #if os(tvOS)
+        260 * uiCustomization.cardPresentation.posterSize.scale
+        #elseif os(macOS)
+        160 * uiCustomization.cardPresentation.posterSize.scale
+        #else
+        120 * uiCustomization.cardPresentation.posterSize.scale
+        #endif
     }
     private var cardHeight: CGFloat {
-        cardWidth * (ContinuumTheme.posterCardHeight / ContinuumTheme.posterCardWidth)
+        cardWidth / ContinuumTheme.posterAspectRatio
     }
 
     var body: some View {
@@ -72,7 +81,7 @@ struct CalendarEventCard: View {
 
     private var posterImage: some View {
         ZStack {
-            AsyncImageView(
+            CachedAsyncImage(
                 url: event.posterUrl ?? "",
                 thumbhash: event.posterThumbhash,
                 targetSize: CGSize(width: cardWidth, height: cardHeight),

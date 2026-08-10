@@ -17,6 +17,9 @@ fastlane/README.md
 
 # Local signing and secrets
 iosApp/Signing/Local.xcconfig
+# Entitlements variants for a contributor's own team, referenced from
+# Local.xcconfig via the SILO_*_ENTITLEMENTS variables.
+*.local.entitlements
 .env
 .env.*
 !.env.example
@@ -57,6 +60,5 @@ output/
 Thumbs.db
 .swiftpm/
 docs/*
-!docs/tvos-focus.md
 !docs/mac-builder.md
 !docs/release/*

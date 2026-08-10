@@ -183,6 +183,8 @@ struct DownloadActionButton: View {
             } label: {
                 progressLabel(fraction: record?.progressFraction ?? 0, paused: false)
             }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
             .accessibilityLabel("Downloading")
 
         case .paused:
@@ -196,6 +198,8 @@ struct DownloadActionButton: View {
             } label: {
                 progressLabel(fraction: record?.progressFraction ?? 0, paused: true)
             }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
             .accessibilityLabel("Download paused")
 
         case .registering, .preparing, .queued, .fetchingAssets:
@@ -206,6 +210,8 @@ struct DownloadActionButton: View {
             } label: {
                 circleLabel(icon: "arrow.down.circle", active: true, showSpinner: true)
             }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
             .accessibilityLabel("Preparing download")
 
         case .completed:
@@ -216,6 +222,8 @@ struct DownloadActionButton: View {
             } label: {
                 circleLabel(icon: "checkmark.circle.fill", active: true, tint: .green)
             }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
             .accessibilityLabel("Downloaded")
 
         case .revoked:
@@ -226,6 +234,8 @@ struct DownloadActionButton: View {
             } label: {
                 circleLabel(icon: "checkmark.circle", active: true, tint: .yellow)
             }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
             .accessibilityLabel("Downloaded (re-download no longer allowed)")
 
         case .failed:
@@ -245,6 +255,8 @@ struct DownloadActionButton: View {
             } label: {
                 circleLabel(icon: "exclamationmark.triangle", active: true, tint: .orange)
             }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
             .accessibilityLabel("Download failed")
         }
     }
@@ -396,7 +408,7 @@ struct DownloadActionButton: View {
         }
     }
 
-    /// Glyph over caption, sized to match `PhoneLabeledAction` exactly so
+    /// Glyph over caption, sized to match `DetailLabeledAction` exactly so
     /// the two sit on one baseline in the refined action row.
     private func labeledGlyph<Glyph: View>(
         tint: Color,
@@ -425,7 +437,6 @@ struct DownloadActionButton: View {
         case .registering, .preparing, .queued, .fetchingAssets: return "Preparing"
         case .completed, .revoked: return "Downloaded"
         case .failed: return "Failed"
-        default: return "Download"
         }
     }
 

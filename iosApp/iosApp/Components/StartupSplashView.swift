@@ -37,30 +37,36 @@ struct StartupSplashView: View {
         .onDisappear(perform: stopPlayback)
     }
 
-    @ViewBuilder
-    private var startupVideo: some View {
+    /// Fraction of the container width the video occupies, and the cap it never exceeds.
+    private static let videoWidthRatio: CGFloat = {
         #if os(tvOS)
-        GeometryReader { proxy in
-            let videoWidth = min(proxy.size.width * 0.25, 440)
-
-            StartupSplashPlayerSurface(player: player)
-                .frame(width: videoWidth, height: videoWidth * 9.0 / 16.0)
-                .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
-        }
-        .ignoresSafeArea()
-        #elseif os(iOS)
-        GeometryReader { proxy in
-            let videoWidth = min(proxy.size.width * 0.6, 320)
-
-            StartupSplashPlayerSurface(player: player)
-                .frame(width: videoWidth, height: videoWidth * 9.0 / 16.0)
-                .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
-        }
-        .ignoresSafeArea()
+        0.25
+        #elseif os(macOS)
+        0.4
         #else
-        StartupSplashPlayerSurface(player: player)
-            .ignoresSafeArea()
+        0.6
         #endif
+    }()
+
+    private static let maximumVideoWidth: CGFloat = {
+        #if os(tvOS)
+        440
+        #elseif os(macOS)
+        360
+        #else
+        320
+        #endif
+    }()
+
+    private var startupVideo: some View {
+        GeometryReader { proxy in
+            let videoWidth = min(proxy.size.width * Self.videoWidthRatio, Self.maximumVideoWidth)
+
+            StartupSplashPlayerSurface(player: player)
+                .frame(width: videoWidth, height: videoWidth * 9.0 / 16.0)
+                .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+        }
+        .ignoresSafeArea()
     }
 
     private var fallbackContent: some View {

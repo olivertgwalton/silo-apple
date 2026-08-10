@@ -1,6 +1,6 @@
 import Foundation
 
-/// State container for the iOS settings screen.
+/// State container for the settings screens on every platform.
 ///
 /// Two scopes meet here. Playback choices that belong to *this device* (quality,
 /// skip behaviour, sync offsets) go through ``PlayerSettings`` at
@@ -8,13 +8,16 @@ import Foundation
 /// metadata language are the *profile's* choices and go through
 /// ``ProfileSettingsWriter`` at `profile` — the same keys, scope and wire
 /// values the web and Android clients use, so an edit made on any of them reads
-/// back the same on the others. The tvOS screen is the twin of this one.
+/// back the same on the others.
+///
+/// iOS/macOS and tvOS render entirely different settings screens, but the state
+/// and the writes behind them are identical, so there is one of these rather
+/// than a twin per platform — a fix here can no longer land on one screen and
+/// miss the other.
 @Observable
-class SettingsViewModel {
+final class SettingsViewModel {
     var userInfo: UserInfo?
     var activeProfile: UserProfile?
-    var isLoading = false
-    var error: String?
 
     /// Active server URL. Reads through the registry so a server switch
     /// reflects here without a reload. Used by the account-card subtitle
@@ -122,6 +125,31 @@ class SettingsViewModel {
         )
     }
 
+    // MARK: - Derived
+
+    var isAdmin: Bool { userInfo?.isAdmin == true }
+
+    var displayName: String {
+        if let profileName = activeProfile?.name, !profileName.isEmpty {
+            return profileName
+        }
+        return userInfo?.username ?? "Silo"
+    }
+
+    var accountSubtitle: String {
+        if isAdmin { return "Administrator" }
+        if let username = userInfo?.username, !username.isEmpty {
+            return username
+        }
+        return "Signed in"
+    }
+
+    var profileAvatar: String? {
+        activeProfile?.avatarEmoji
+    }
+
+    // MARK: - Load / save
+
     /// Main-actor isolated: it publishes into observable state the settings
     /// views are already rendering, and seeds the profile editor, which is
     /// itself main-actor bound.
@@ -163,11 +191,6 @@ class SettingsViewModel {
         prefs.seed(from: activeProfile)
         await prefs.load()
     }
-
-    func saveSubtitleSizePreference() {
-        UserDefaults.standard.set(subtitleSize, forKey: "subtitleSize")
-    }
-
     /// Apply a shared quality preset, which stores the contract's two axes.
     @MainActor
     func setQualityPreset(_ presetId: String) async {
@@ -258,6 +281,14 @@ class SettingsViewModel {
         await PlayerSettings.shared.setSubtitleDeviceOverrideEnabled(enabled)
         subtitleAppearance = PlayerSettings.shared.subtitleAppearance
         subtitleUsesDeviceAppearanceOverride = PlayerSettings.shared.subtitleUsesDeviceAppearanceOverride
+    }
+
+    @MainActor
+    func resetSubtitleAppearance() async {
+        await PlayerSettings.shared.setSubtitleAppearance(.default)
+        subtitleAppearance = PlayerSettings.shared.subtitleAppearance
+        subtitleUsesDeviceAppearanceOverride = PlayerSettings.shared.subtitleUsesDeviceAppearanceOverride
+        subtitleMatchesSystemAppearance = PlayerSettings.shared.subtitleMatchesSystemAppearance
     }
 
     @MainActor

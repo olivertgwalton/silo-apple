@@ -328,7 +328,7 @@ struct PersonDetailView: View {
         #if os(tvOS)
         TVPersonDetailContent(person: person, viewModel: viewModel)
         #else
-        PhonePersonDetailContent(person: person, viewModel: viewModel)
+        CompactPersonDetailContent(person: person, viewModel: viewModel)
             .refreshable {
                 async let overlayRefresh: Void = OverlayPrefsStore.shared.refresh()
                 await viewModel.reload()
@@ -369,15 +369,17 @@ private struct TVPersonDetailContent: View {
                         )
                         .frame(maxWidth: .infinity, minHeight: 420)
                     } else {
-                        TVCatalogGrid(
+                        CatalogGrid(
                             items: viewModel.items,
                             isLoading: viewModel.isLoadingItems,
                             hasMore: viewModel.hasMore,
                             onItemTap: { contentId in
                                 router.navigate(to: .itemDetail(contentId: contentId))
                             },
-                            onNearEnd: { index in
+                            onLoadMore: {
                                 Task { await viewModel.loadMoreIfNeeded() }
+                            },
+                            onCellAppear: { index in
                                 let end = min(index + 48, viewModel.items.count)
                                 viewModel.prefetchPosters(in: index..<end)
                             }
@@ -467,7 +469,7 @@ private struct TVPersonDetailContent: View {
     }
 }
 #else
-private struct PhonePersonDetailContent: View {
+private struct CompactPersonDetailContent: View {
     let person: Person
     var viewModel: PersonDetailViewModel
 
@@ -602,7 +604,7 @@ private struct PersonPortrait: View {
             Color.continuumSurfaceElevated
 
             if let photoUrl = clean(person.photoUrl) {
-                AsyncImageView(
+                CachedAsyncImage(
                     url: photoUrl,
                     thumbhash: person.photoThumbhash,
                     targetSize: CGSize(width: width, height: height),

@@ -11,7 +11,6 @@ struct RecommendationsView: View {
     /// tvOS-only: the custom top menu owns focus, so deferred content focus
     /// claims must not yank focus back into the shortcut row.
     var isTopMenuFocused: Bool = false
-    var onTopMenuFocusRequest: (() -> Void)? = nil
 
     @State private var viewModel = RecommendationsViewModel()
     @State private var currentProfile: UserProfile?
@@ -51,8 +50,6 @@ struct RecommendationsView: View {
         #else
         VStack(spacing: 0) {
             HStack(spacing: 12) {
-                SidebarToggleButton()
-
                 Text("Recommendations")
                     .font(.continuumTitle)
                     .foregroundColor(.continuumOnSurface)
@@ -133,8 +130,7 @@ struct RecommendationsView: View {
                 } else {
                     router.navigate(to: shortcut.route)
                 }
-            },
-            onMoveUp: onTopMenuFocusRequest
+            }
         )
     }
 
@@ -148,8 +144,7 @@ struct RecommendationsView: View {
                     SectionRow(
                         section: section,
                         onItemTap: { router.navigate(to: .itemDetail(contentId: $0)) },
-                        prefersDefaultFocusOnFirstItem: prefersDefaultFocus(forSectionAt: index),
-                        onMoveUp: nil
+                        prefersDefaultFocusOnFirstItem: prefersDefaultFocus(forSectionAt: index)
                     )
                 }
             }
@@ -223,7 +218,6 @@ private struct SavedShortcutsRow: View {
     /// the matching capsule renders selected instead of the row navigating.
     var selection: SavedShortcut? = nil
     let onSelect: (SavedShortcut) -> Void
-    let onMoveUp: (() -> Void)?
 
     @FocusState private var focusedShortcut: SavedShortcut?
 
@@ -265,11 +259,6 @@ private struct SavedShortcutsRow: View {
         #if os(tvOS)
         .focusScope(focusScope)
         .focusSection()
-        .onMoveCommand { direction in
-            if direction == .up {
-                onMoveUp?()
-            }
-        }
         // Imperative hand-down from the top menu: prefersDefaultFocus only
         // fires when the engine ENTERS this scope, which doesn't happen when
         // the For You root is swapped in beneath a remote sitting in the menu.

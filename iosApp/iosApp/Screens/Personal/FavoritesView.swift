@@ -9,13 +9,9 @@ struct FavoritesView: View {
     @State private var error: ErrorState?
     @State private var uiCustomization = UICustomizationPreferences.shared
     @Environment(AppRouter.self) private var router
-    @Environment(\.horizontalSizeClass) private var hSize
 
     private var columns: [GridItem] {
-        AdaptiveColumns.posters(
-            for: hSize,
-            posterSize: uiCustomization.cardPresentation.posterSize
-        )
+        AdaptiveColumns.posterColumns(uiCustomization.cardPresentation.posterSize)
     }
 
     init(showsNavigationTitle: Bool = true) {

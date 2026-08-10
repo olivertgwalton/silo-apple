@@ -7,7 +7,7 @@ import SwiftUI
 /// visible, matching the "HUD over media" idiom rather than a modal sheet.
 /// Menu dismisses via `onExitCommand` on the host view.
 ///
-/// Focus model (see docs/tvos-focus.md): every interactive row is a real
+/// Focus model: every interactive row is a real
 /// `Button` and movement is owned entirely by the tvOS focus engine —
 /// columns are `.focusSection()`s and the tab bar routes entry to the
 /// active pill with `defaultFocus(priority: .userInitiated)`. `@FocusState`
@@ -383,7 +383,7 @@ private struct LabelValueRow: View {
 /// Shared row chrome for every interactive HUD row: white fill when focused,
 /// optional faint wash when it represents the current selection. Owns all
 /// focus appearance via `@Environment(\.isFocused)` and suppresses the system
-/// halo — same idiom as `TVPillButtonStyle`.
+/// halo — same idiom as `DetailPillButtonStyle`.
 private struct HUDRowButtonStyle: ButtonStyle {
     var cornerRadius: CGFloat = 10
     var isSelected: Bool = false
@@ -909,15 +909,6 @@ private struct HUDDropdownOption: Identifiable, Hashable {
 }
 
 private enum HUDPickerOptions {
-    static let onOff: [HUDDropdownOption] = [
-        .init(id: "on", label: "On"),
-        .init(id: "off", label: "Off")
-    ]
-
-    static func boolSelection(_ value: Bool) -> String {
-        value ? "on" : "off"
-    }
-
     static func boolValue(for id: String) -> Bool {
         id.caseInsensitiveCompare("on") == .orderedSame
     }

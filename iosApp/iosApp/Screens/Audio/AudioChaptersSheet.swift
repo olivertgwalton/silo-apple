@@ -40,10 +40,9 @@ struct AudioChaptersSheet: View {
                 }
             }
         }
-        #if os(iOS)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
-        #endif
+        .presentationSizing(.form)
         .preferredColorScheme(.dark)
     }
 

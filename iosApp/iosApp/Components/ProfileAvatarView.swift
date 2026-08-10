@@ -17,7 +17,7 @@ struct ProfileAvatarView: View {
                 .frame(width: size, height: size)
 
             if let imageURL = resolvedImageURL {
-                AsyncImageView(url: imageURL, contentMode: .fill)
+                CachedAsyncImage(url: imageURL, contentMode: .fill)
                     .frame(width: size, height: size)
                     .clipShape(Circle())
             } else if let displayAvatar = displayAvatarText {

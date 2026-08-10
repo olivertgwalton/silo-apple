@@ -11,9 +11,17 @@ import SwiftUI
 ///   the network room to complete before the user reaches the bottom.
 /// - Prefetch: the same callback arms Nuke to fetch posters in the next
 ///   window. The grid itself does not touch the image cache.
-/// - Columns: caller picks `columnCount` (default 6). Drop to 5 when a
-///   side-rail (alphabet jumper etc.) eats horizontal space, or the
-///   fixed `posterCardWidth` cards start overlapping each other.
+/// - Columns: caller picks `columnCount` (default 6), adjusted for the
+///   poster-size preference. Cells take their width from
+///   `containerRelativeFrame`, so a grid that is handed less room than the
+///   full content column — search gives half the screen to the system
+///   keyboard — narrows its cards instead of drawing them past the edge.
+///   Nothing has to measure or be told the available width.
+///
+/// Rows are chunked by hand rather than left to `LazyVGrid` because they are
+/// explicit focus sections: the focus engine resolves d-pad moves
+/// geometrically, and a partially filled grid row has no focusable under most
+/// columns, so a move into a ragged row falls through.
 struct TVCatalogGrid: View {
     let items: [BrowseItem]
     let isLoading: Bool
@@ -21,10 +29,6 @@ struct TVCatalogGrid: View {
     let onItemTap: (String) -> Void
     let onNearEnd: (Int) -> Void
     var columnCount: Int = 6
-    /// Per-card width. Defaults to the theme poster size; shrink when a
-    /// side-rail squeezes the usable width and the default cards would
-    /// overflow their grid cells.
-    var cardWidth: CGFloat = ContinuumTheme.posterCardWidth
     var prefersDefaultFocusOnFirstItem: Bool = false
     var focusRequest: Int = 0
 
@@ -34,7 +38,7 @@ struct TVCatalogGrid: View {
     @State private var uiCustomization = UICustomizationPreferences.shared
     @Environment(AppRouter.self) private var router
 
-    private let columnSpacing: CGFloat = 40
+    private let columnSpacing = AdaptiveColumns.tvPosterColumnSpacing
     private let rowSpacing: CGFloat = 60
 
     /// Trigger prefetch/pagination when a cell within this many rows of
@@ -43,6 +47,9 @@ struct TVCatalogGrid: View {
     /// before the user reaches the bottom.
     private let prefetchRowsRemaining: Int = 8
 
+    /// Columns come from the poster-size preference alone. The cells size
+    /// themselves against whatever width the grid is actually given, so a
+    /// narrower container yields narrower cards rather than an overflowing row.
     private var resolvedColumnCount: Int {
         AdaptiveColumns.tvPosterCount(
             standardCount: columnCount,
@@ -50,8 +57,18 @@ struct TVCatalogGrid: View {
         )
     }
 
-    private var rowStartIndices: [Int] {
-        stride(from: 0, to: items.count, by: resolvedColumnCount).map { $0 }
+    /// One display row. `id` is the index the row starts at, which each cell
+    /// adds its own offset to when reporting its absolute position.
+    private struct Row: Identifiable {
+        let id: Int
+        let items: [BrowseItem]
+    }
+
+    private var rows: [Row] {
+        let count = resolvedColumnCount
+        return stride(from: 0, to: items.count, by: count).map { start in
+            Row(id: start, items: Array(items[start..<min(start + count, items.count)]))
+        }
     }
 
     var body: some View {
@@ -61,36 +78,45 @@ struct TVCatalogGrid: View {
         // has no focusable under most columns. The row's full-width section
         // frame is the catchment; the engine snaps to its nearest card.
         LazyVStack(alignment: .leading, spacing: rowSpacing) {
-            ForEach(rowStartIndices, id: \.self) { rowStart in
+            ForEach(rows) { row in
                 HStack(alignment: .top, spacing: columnSpacing) {
-                    ForEach(IndexedItems(rowItems(from: rowStart))) { indexed in
-                        let item = indexed.element
-                        TVMediaCard(
+                    ForEach(Array(row.items.enumerated()), id: \.element.id) { offset, item in
+                        MediaCard(
                             title: item.title,
                             posterUrl: item.posterUrl ?? "",
+                            thumbhash: item.posterThumbhash,
                             year: item.year,
                             userState: item.userState,
                             overlayData: OverlayData.from(item),
                             action: { onItemTap(item.contentId) },
                             playAction: playAction(for: item),
-                            cardWidth: cardWidth,
+                            focusedItemId: $focusedItemId,
+                            contentId: item.contentId,
                             aspect: item.isAudiobook ? .square : .poster,
+                            captionLayout: .gridCentered,
                             prefersDefaultFocus: prefersDefaultFocusOnFirstItem
-                                && rowStart == 0 && indexed.index == 0,
-                            defaultFocusNamespace: gridFocusNamespace,
-                            focusBinding: $focusedItemId,
-                            focusContentId: item.contentId,
-                            contentId: item.contentId
+                                && row.id == 0 && offset == 0,
+                            defaultFocusNamespace: gridFocusNamespace
                         )
-                        .frame(maxWidth: .infinity)
-                        .onAppear { onCellAppear(index: rowStart + indexed.index) }
+                        .containerRelativeFrame(
+                            .horizontal,
+                            count: resolvedColumnCount,
+                            span: 1,
+                            spacing: columnSpacing
+                        )
+                        .onAppear { onCellAppear(index: row.id + offset) }
                     }
                     // Keep ragged-row cards in their column positions by
                     // filling the empty slots with equally flexible spacers.
-                    ForEach(0..<emptySlotCount(from: rowStart), id: \.self) { _ in
+                    ForEach(0..<(resolvedColumnCount - row.items.count), id: \.self) { _ in
                         Color.clear
-                            .frame(maxWidth: .infinity)
                             .frame(height: 1)
+                            .containerRelativeFrame(
+                                .horizontal,
+                                count: resolvedColumnCount,
+                                span: 1,
+                                spacing: columnSpacing
+                            )
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -112,14 +138,6 @@ struct TVCatalogGrid: View {
                 Spacer()
             }
         }
-    }
-
-    private func rowItems(from rowStart: Int) -> [BrowseItem] {
-        Array(items[rowStart..<min(rowStart + resolvedColumnCount, items.count)])
-    }
-
-    private func emptySlotCount(from rowStart: Int) -> Int {
-        resolvedColumnCount - rowItems(from: rowStart).count
     }
 
     private func onCellAppear(index: Int) {
@@ -149,34 +167,4 @@ struct TVCatalogGrid: View {
     }
 }
 
-private struct IndexedItems<Base: RandomAccessCollection>: RandomAccessCollection
-where Base.Index == Int, Base.Element: Identifiable {
-    let base: Base
-
-    init(_ base: Base) {
-        self.base = base
-    }
-
-    var startIndex: Int { base.startIndex }
-    var endIndex: Int { base.endIndex }
-
-    func index(after i: Int) -> Int {
-        base.index(after: i)
-    }
-
-    func index(before i: Int) -> Int {
-        base.index(before: i)
-    }
-
-    subscript(position: Int) -> IndexedItem<Base.Element> {
-        IndexedItem(index: position, element: base[position])
-    }
-}
-
-private struct IndexedItem<Element: Identifiable>: Identifiable {
-    let index: Int
-    let element: Element
-
-    var id: Element.ID { element.id }
-}
 #endif

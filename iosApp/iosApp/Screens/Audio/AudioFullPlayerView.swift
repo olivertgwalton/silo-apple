@@ -214,6 +214,8 @@ private struct PortraitPlayerLayout: View {
                     accent: player.palette.accent
                 )
             }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
             .accessibilityLabel("Playback Speed")
             .accessibilityValue(AudioFullPlayerView.rateLabel(player.playbackRate))
 
@@ -232,6 +234,8 @@ private struct PortraitPlayerLayout: View {
                     accent: player.palette.accent
                 )
             }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
             .accessibilityLabel("Sleep Timer")
             .accessibilityValue(
                 player.sleepTimer.isActive

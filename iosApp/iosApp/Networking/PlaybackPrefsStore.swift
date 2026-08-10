@@ -61,30 +61,6 @@ final class PlaybackPrefsStore: ObservableObject {
         libraryPrefs[libraryId]
     }
 
-    /// PUT to the server, then refresh local cache. Throws on network
-    /// / HTTP failure so the UI can surface a toast or retry control.
-    func setPref(
-        libraryId: Int,
-        audioLanguage: String?,
-        subtitleLanguage: String?,
-        subtitleMode: String?,
-        showForcedSubtitles: Bool?
-    ) async throws {
-        try await ContinuumAPI.shared.setLibraryPlaybackPref(
-            libraryId: libraryId,
-            audioLanguage: audioLanguage,
-            subtitleLanguage: subtitleLanguage,
-            subtitleMode: subtitleMode,
-            showForcedSubtitles: showForcedSubtitles
-        )
-        await refresh()
-    }
-
-    func deletePref(libraryId: Int) async throws {
-        try await ContinuumAPI.shared.deleteLibraryPlaybackPref(libraryId: libraryId)
-        await refresh()
-    }
-
     /// Drop in-memory state. Called on sign-out so the next user
     /// doesn't see the previous user's prefs flash onto the screen
     /// before the fresh fetch lands.

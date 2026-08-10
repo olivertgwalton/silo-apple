@@ -24,10 +24,5 @@ final class TVDebugSettings {
         self.showFocusTargets = defaults.bool(forKey: Self.showFocusTargetsKey)
             || CommandLine.arguments.contains("-debugFocusTargets")
     }
-
-    func setShowFocusTargets(_ value: Bool) {
-        showFocusTargets = value
-        defaults.set(value, forKey: Self.showFocusTargetsKey)
-    }
 }
 #endif

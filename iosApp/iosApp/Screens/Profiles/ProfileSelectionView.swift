@@ -66,6 +66,7 @@ struct ProfileSelectionView: View {
             }
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
+            .presentationSizing(.page)
         }
         #endif
         #if !os(tvOS)
@@ -73,6 +74,7 @@ struct ProfileSelectionView: View {
             pinEntryContent(for: context)
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
+                .presentationSizing(.form)
         }
         #endif
     }

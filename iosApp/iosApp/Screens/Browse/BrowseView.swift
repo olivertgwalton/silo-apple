@@ -182,6 +182,8 @@ struct BrowseView: View {
                 trailing: viewModel.filterState.sort.directionLabel(for: viewModel.filterState.effectiveOrder)
             )
         }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
     }
 
     private func controlChip(icon: String, text: String, trailing: String? = nil, badge: Int? = nil) -> some View {

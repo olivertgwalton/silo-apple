@@ -4,15 +4,17 @@ import SwiftUI
 
 struct AVPlayerSurface: NSViewRepresentable {
     let backend: AVPlayerBackend
+    var videoGravity: AVLayerVideoGravity = .resizeAspect
 
     func makeNSView(context: Context) -> ContinuumMacPlayerView {
-        let view = ContinuumMacPlayerView()
-        view.attach(backend: backend)
-        return view
+        ContinuumMacPlayerView()
     }
 
     func updateNSView(_ nsView: ContinuumMacPlayerView, context: Context) {
         nsView.attach(backend: backend)
+        if nsView.videoGravity != videoGravity {
+            nsView.videoGravity = videoGravity
+        }
     }
 
     static func dismantleNSView(_ nsView: ContinuumMacPlayerView, coordinator: ()) {
@@ -59,10 +61,6 @@ final class ContinuumMacPlayerView: AVPlayerView {
     private func addSubtitleOverlay() {
         subtitleOverlay.autoresizingMask = []
         subtitleOverlay.wantsLayer = true
-        overlayParent.addSubview(subtitleOverlay, positioned: .above, relativeTo: nil)
-    }
-
-    private func positionSubtitleOverlays() {
         overlayParent.addSubview(subtitleOverlay, positioned: .above, relativeTo: nil)
     }
 

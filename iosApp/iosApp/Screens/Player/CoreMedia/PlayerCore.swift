@@ -1149,10 +1149,6 @@ final class PlayerCore: NSObject {
         videoToolboxDecoder.wakeWaiters()
     }
 
-    private func resetVideoToolboxDecodeBackpressure() {
-        videoToolboxDecoder.resetBackpressure()
-    }
-
     private func videoToolboxInFlightCount() -> Int {
         videoToolboxDecoder.inFlightCount()
     }

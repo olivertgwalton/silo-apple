@@ -310,22 +310,3 @@ struct OverlayPreset {
     }
 }
 
-/// Curated accent palette shown in the settings UI. Mirrors the web
-/// `ACCENT_PALETTE` so a color picked on one platform looks the same on
-/// the other.
-enum OverlayAccentPalette {
-    static let entries: [(label: String, hex: String)] = [
-        ("Gold",    "#f5c518"),
-        ("Tomato",  "#fa320a"),
-        ("Orange",  "#f97316"),
-        ("Amber",   "#f59e0b"),
-        ("Emerald", "#10b981"),
-        ("Cyan",    "#06b6d4"),
-        ("Blue",    "#3b82f6"),
-        ("Indigo",  "#6366f1"),
-        ("Violet",  "#8b5cf6"),
-        ("Pink",    "#ec4899"),
-        ("Slate",   "#64748b"),
-        ("White",   "#ffffff"),
-    ]
-}

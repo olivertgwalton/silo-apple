@@ -51,13 +51,13 @@ struct TVAudiobookDetailSections: View {
                     .frame(maxWidth: 1280, alignment: .leading)
                 if let credits = staticCredits {
                     Text(credits)
-                        .font(.system(size: 22))
+                        .font(.continuumCaption)
                         .foregroundColor(.white.opacity(0.55))
                 }
             }
         } else if let credits = staticCredits {
             Text(credits)
-                .font(.system(size: 22))
+                .font(.continuumCaption)
                 .foregroundColor(.white.opacity(0.55))
         }
     }
@@ -172,7 +172,7 @@ private struct NarrationRowLabel: View {
 
             if let year = narration.year {
                 Text(String(year))
-                    .font(.system(size: 22))
+                    .font(.continuumCaption)
                     .monospacedDigit()
                     .foregroundColor(isFocused ? .black.opacity(0.5) : .white.opacity(0.55))
             }
@@ -186,10 +186,10 @@ private struct NarrationRowLabel: View {
 // MARK: - Cover rail
 
 /// One horizontal rail of square audiobook covers (series / more-by-author /
-/// related), built on the house `TVMediaCard` so the cards inherit the ring
+/// related), built on the house `MediaCard` so the cards inherit the ring
 /// focus treatment (system halo suppressed) and the cached Nuke renderer.
 /// Owns a `@FocusState` so d-pad entry lands on the first card instead of
-/// the geometrically-nearest one — same pattern as `TVSimilarRail`.
+/// the geometrically-nearest one — same pattern as `SimilarRail`.
 private struct AudiobookCoverRail: View {
     let title: String
     let items: [AudiobookRelatedItem]
@@ -206,22 +206,26 @@ private struct AudiobookCoverRail: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 32) {
                     ForEach(items) { item in
-                        TVMediaCard(
+                        MediaCard(
                             title: item.title,
                             posterUrl: item.posterUrl ?? "",
                             year: item.year,
-                            subtitle: item.seriesIndex.map { "Book \($0)" },
                             action: { onSelect(item.contentId) },
-                            cardWidth: 220,
+                            focusedItemId: $focusedItemId,
+                            contentId: item.contentId,
                             aspect: .square,
+                            subtitle: item.seriesIndex.map { "Book \($0)" },
                             focusTreatment: .ring,
-                            focusBinding: $focusedItemId,
-                            focusContentId: item.contentId
+                            captionLayout: .gridCentered
+                        )
+                        .containerRelativeFrame(
+                            .horizontal, count: 7, span: 1, spacing: 32
                         )
                     }
                 }
                 .padding(.vertical, 24)
             }
+            .contentMargins(.horizontal, ContinuumTheme.safePadding, for: .scrollContent)
             .focusSection()
             .applyCoverRailDefaultFocus(items.first?.contentId, binding: $focusedItemId)
             .scrollClipDisabled()
@@ -233,7 +237,7 @@ private extension View {
     /// Land d-pad entry on the first card rather than the geometrically-
     /// nearest one. `.userInitiated` priority is what makes `defaultFocus`
     /// win over proximity on rail entry — same helper shape as
-    /// `TVSimilarRail.applySimilarRailDefaultFocus`. No-op when empty.
+    /// `SimilarRail.applyRailDefaultFocus`. No-op when empty.
     @ViewBuilder
     func applyCoverRailDefaultFocus(
         _ firstContentId: String?,

@@ -11,7 +11,7 @@ struct AudioCoverArtView: View {
             RoundedRectangle(cornerRadius: cornerRadius)
                 .fill(Color.continuumSurfaceElevated)
             if let urlString, !urlString.isEmpty {
-                AsyncImageView(url: urlString, contentMode: .fill)
+                CachedAsyncImage(url: urlString, contentMode: .fill)
             } else {
                 Image(systemName: "book.closed")
                     .font(.title)

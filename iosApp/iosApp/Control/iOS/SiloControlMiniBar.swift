@@ -57,6 +57,7 @@ struct SiloControlMiniBar: View {
                             Image(systemName: controller.clock.isPlaying() ? "pause.fill" : "play.fill")
                                 .font(.system(size: 18, weight: .semibold))
                                 .frame(width: 32, height: 32)
+                                .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(controller.clock.isPlaying() ? "Pause" : "Play")
@@ -80,7 +81,7 @@ struct SiloControlMiniBar: View {
     @ViewBuilder
     private var thumb: some View {
         if let url = artwork.posterURL, !url.isEmpty {
-            AsyncImageView(url: url, contentMode: .fill)
+            CachedAsyncImage(url: url, contentMode: .fill)
                 .frame(width: 34, height: 50)
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         } else {

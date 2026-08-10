@@ -15,7 +15,6 @@ struct SeriesDetailContent<BelowOverview: View>: View {
     let seasons: [Season]
     let selectedSeason: Season?
     let episodes: [EpisodeListItem]
-    let episodesBySeason: [Int: [EpisodeListItem]]
     let isLoadingEpisodes: Bool
     let selectedNextUpFileId: Int?
     let selectedNextUpAudioTrackIndex: Int?
@@ -89,12 +88,11 @@ struct SeriesDetailContent<BelowOverview: View>: View {
             posterThumbhash: detail.posterThumbhash,
             backdropUrl: detail.backdropUrl,
             backdropThumbhash: detail.backdropThumbhash,
-            eyebrow: PhoneHeroMetadata.eyebrow(from: detail),
-            sourceTokens: PhoneHeroMetadata.seriesSourceTokens(from: detail),
-            ratingChip: PhoneHeroMetadata.contentRatingChip(from: detail),
+            eyebrow: DetailHeroMetadata.eyebrow(from: detail),
+            sourceTokens: DetailHeroMetadata.seriesSourceTokens(from: detail),
+            ratingChip: DetailHeroMetadata.contentRatingChip(from: detail),
             overview: detail.overview,
-            factsLine: PhoneHeroMetadata.seriesFactsLine(from: detail),
-            overlayData: OverlayData.from(detail),
+            factsLine: DetailHeroMetadata.seriesFactsLine(from: detail),
             actions: { actionStack },
             belowOverview: belowOverview
         )
@@ -104,15 +102,15 @@ struct SeriesDetailContent<BelowOverview: View>: View {
     private var actionStack: some View {
         VStack(spacing: 16) {
             if let nextUp = nextUpEpisode {
-                PhoneRefinedPlayButton(
+                DetailLabeledPlayButton(
                     icon: "play.fill",
                     title: playButtonLabel(for: nextUp),
                     action: { handlePlayTap(for: nextUp) }
                 )
             }
 
-            PhoneLabeledActionRow {
-                PhoneLabeledAction(
+            DetailLabeledActionRow {
+                DetailLabeledAction(
                     icon: "heart",
                     iconActive: "heart.fill",
                     isActive: isFavorite,
@@ -121,7 +119,7 @@ struct SeriesDetailContent<BelowOverview: View>: View {
                         ? "Remove from Favorites" : "Add to Favorites",
                     action: onToggleFavorite
                 )
-                PhoneLabeledAction(
+                DetailLabeledAction(
                     icon: "bookmark",
                     iconActive: "bookmark.fill",
                     isActive: inWatchlist,
@@ -130,7 +128,7 @@ struct SeriesDetailContent<BelowOverview: View>: View {
                         ? "Remove from Watchlist" : "Add to Watchlist",
                     action: onToggleWatchlist
                 )
-                PhoneLabeledAction(
+                DetailLabeledAction(
                     icon: "checkmark.circle",
                     iconActive: "checkmark.circle.fill",
                     isActive: isWatched,
@@ -152,13 +150,13 @@ struct SeriesDetailContent<BelowOverview: View>: View {
                 }
                 // The series page has no other overflow entries today; the
                 // menu exists solely so the trailer fetch is reachable.
-                PhoneLabeledMenu(label: "More") {
+                DetailLabeledMenu(label: "More") {
                     overflowMenuItems
                 }
             }
 
             if let trailerStatusMessage {
-                PhoneTrailerStatusPill(
+                TrailerStatusPill(
                     message: trailerStatusMessage,
                     isFetching: isFindingTrailers,
                     onAutoDismiss: onTrailerStatusShown
@@ -183,7 +181,7 @@ struct SeriesDetailContent<BelowOverview: View>: View {
     }
 
     private func nextUpSelectors(for version: FileVersion) -> some View {
-        PhonePlaybackSelectorRow(
+        PlaybackSelectorRow(
             versions: nextUpVersions,
             currentVersion: version,
             selectedVersionFileId: selectedNextUpFileId,
@@ -293,14 +291,14 @@ struct SeriesDetailContent<BelowOverview: View>: View {
             allowRemote: true
         )
         if !entries.isEmpty {
-            PhoneTrailersSection(entries: entries, onPlayExtra: onPlayExtra)
+            TrailersSection(entries: entries, onPlayExtra: onPlayExtra)
         }
     }
 
     private var similarSection: some View {
         // Header lives inside the rail so it disappears with the cards when
         // recommendations are disabled or empty.
-        PhoneSimilarRail(
+        SimilarRail(
             contentId: detail.contentId,
             onSelect: onNavigateToItem
         )
@@ -311,8 +309,8 @@ struct SeriesDetailContent<BelowOverview: View>: View {
     @ViewBuilder
     private var episodesSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            PhoneSectionHeader(
-                label: selectedSeason.map { "Season \($0.seasonNumber)" } ?? "Episodes",
+            DetailSectionHeader(
+                label: selectedSeason.map { "Season \($0.seasonNumber)" },
                 title: "Episodes",
                 trailingText: episodeCountSubtitle
             )
@@ -322,7 +320,6 @@ struct SeriesDetailContent<BelowOverview: View>: View {
                 seasons: seasons,
                 selectedSeason: selectedSeason,
                 episodes: episodes,
-                episodesBySeason: episodesBySeason,
                 isLoadingEpisodes: isLoadingEpisodes,
                 onSelectSeason: onSelectSeason,
                 onSelectEpisode: onEpisodeTap
@@ -340,9 +337,9 @@ struct SeriesDetailContent<BelowOverview: View>: View {
     @ViewBuilder
     private func castSection(cast: [CastMember]) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            PhoneSectionHeader(title: "Cast & Crew")
+            DetailSectionHeader(title: "Cast & Crew")
                 .padding(.horizontal, ContinuumTheme.safePadding)
-            PhoneCastRail(cast: cast, onTap: onPersonTap)
+            DetailCastRail(cast: cast, onTap: onPersonTap)
         }
     }
 
@@ -350,8 +347,8 @@ struct SeriesDetailContent<BelowOverview: View>: View {
 
     private var detailsSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            PhoneSectionHeader(title: "Details")
-            PhoneDetailFactsSection(detail: detail)
+            DetailSectionHeader(title: "Details")
+            DetailFactsSection(detail: detail)
         }
     }
 }

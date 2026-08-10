@@ -13,12 +13,29 @@ struct PlayerView: View {
     /// + local media file, no server session) so playback works with no
     /// network.
     let offlineDownloadId: String?
+    /// Poster/backdrop URLs the presenting screen already had loaded, so the
+    /// now-playing widget skips a catalog fetch it doesn't need.
+    let posterURLHint: String?
+    let backdropURLHint: String?
+    /// Supplied when the player is presented as a full-window cover, which
+    /// owns the presentation state and cannot be torn down by `dismiss()`.
+    /// Nil falls back to the environment dismissal (the debug sheet).
+    let onClose: (() -> Void)?
+    /// Fired once playback actually begins, so a presenter can install the
+    /// destination it wants behind the player. Matches the shared signature.
+    let onPlaybackStarted: (() -> Void)?
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    /// Present when the player is covering the browsing window, absent when
+    /// it is hosted some other way (e.g. the debug launch-argument sheet).
+    @Environment(MacPlayerChrome.self) private var windowChrome: MacPlayerChrome?
     @State private var viewModel = PlayerViewModel()
     @State private var isOptionsPresented = false
     @State private var selectedOptionsTab: MacPlayerOptionsPanel.Tab = .audio
+    @State private var lastHoverLocation: CGPoint?
+    @FocusState private var isKeyboardFocused: Bool
+    @State private var didNotifyPlaybackStarted = false
 
     init(
         contentId: String,
@@ -27,7 +44,11 @@ struct PlayerView: View {
         preferredSubtitleTrackIndex: Int? = nil,
         startFromBeginning: Bool = false,
         resumePositionOverride: Double? = nil,
-        offlineDownloadId: String? = nil
+        offlineDownloadId: String? = nil,
+        posterURLHint: String? = nil,
+        backdropURLHint: String? = nil,
+        onClose: (() -> Void)? = nil,
+        onPlaybackStarted: (() -> Void)? = nil
     ) {
         self.contentId = contentId
         self.preferredFileId = preferredFileId
@@ -36,6 +57,18 @@ struct PlayerView: View {
         self.startFromBeginning = startFromBeginning
         self.resumePositionOverride = resumePositionOverride
         self.offlineDownloadId = offlineDownloadId
+        self.posterURLHint = posterURLHint
+        self.backdropURLHint = backdropURLHint
+        self.onClose = onClose
+        self.onPlaybackStarted = onPlaybackStarted
+    }
+
+    private func close() {
+        if let onClose {
+            onClose()
+        } else {
+            dismiss()
+        }
     }
 
     var body: some View {
@@ -45,7 +78,18 @@ struct PlayerView: View {
             if let error = viewModel.error {
                 errorView(error)
             } else {
-                playerSurface
+                PlayerVideoSurface(viewModel: viewModel)
+                    .ignoresSafeArea()
+
+                // Sits above the video surface (an AppKit view, which would
+                // otherwise win the hit test) and below the controls, so
+                // double-click-to-fullscreen works on the picture without
+                // stealing clicks from the transport buttons.
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture(count: 2) {
+                        windowChrome?.toggleFullScreen()
+                    }
 
                 if viewModel.isLoading, viewModel.avPlayerBackend == nil {
                     ProgressView()
@@ -58,7 +102,9 @@ struct PlayerView: View {
                         viewModel: viewModel,
                         isOptionsPresented: $isOptionsPresented,
                         selectedOptionsTab: $selectedOptionsTab,
-                        onDismiss: { dismiss() }
+                        isFullScreen: windowChrome?.isFullScreen ?? false,
+                        onToggleFullScreen: { windowChrome?.toggleFullScreen() },
+                        onDismiss: { close() }
                     )
                     .transition(.opacity)
                 }
@@ -79,18 +125,31 @@ struct PlayerView: View {
                     PlayerNoticeOverlay(notice: notice)
                         .padding(.top, 72)
                 }
-
-                MacPlayerCommandCapture { command in
-                    handleCommand(command)
-                }
-                .frame(width: 0, height: 0)
             }
         }
-        .onHover { hovering in
-            if hovering {
-                viewModel.revealControls()
-            }
+        // `onHover` alone only fires crossing the boundary, so once the
+        // controls auto-hid with the pointer already inside, nothing brought
+        // them back. Continuous hover reports every move; the view model
+        // extends its auto-hide deadline rather than respawning a task, so
+        // calling it at pointer-sample rate is cheap.
+        .onContinuousHover { phase in
+            guard case .active(let location) = phase, location != lastHoverLocation else { return }
+            lastHoverLocation = location
+            viewModel.revealControls()
         }
+        // Hiding the toolbar is the SwiftUI half of clearing the title bar;
+        // `MacPlayerChrome` handles the height it still reserves.
+        .toolbarVisibility(.hidden, for: .windowToolbar)
+        .onChange(of: shouldShowControls, initial: true) { _, visible in
+            windowChrome?.setChromeVisible(visible)
+        }
+        // Hide the pointer along with the transport, so a playing movie is
+        // nothing but picture.
+        .pointerVisibility(shouldShowControls ? .visible : .hidden)
+        .focusable()
+        .focusEffectDisabled()
+        .focused($isKeyboardFocused)
+        .onKeyPress(phases: .down) { press in handleKeyPress(press) }
         .onChange(of: scenePhase) { _, newPhase in
             viewModel.handleScenePhase(newPhase)
         }
@@ -99,11 +158,21 @@ struct PlayerView: View {
                 isOptionsPresented = false
             }
         }
+        .onChange(of: viewModel.isPlaying) { _, isPlaying in
+            guard isPlaying, !didNotifyPlaybackStarted else { return }
+            didNotifyPlaybackStarted = true
+            onPlaybackStarted?()
+        }
         .onChange(of: viewModel.remoteDismissToken) { _, newValue in
             guard newValue != nil else { return }
-            dismiss()
+            close()
         }
         .onAppear {
+            isKeyboardFocused = true
+            viewModel.applyArtworkURLHints(
+                posterURL: posterURLHint,
+                backdropURL: backdropURLHint
+            )
             viewModel.loadAndPlay(
                 contentId: contentId,
                 preferredFileId: preferredFileId,
@@ -130,55 +199,69 @@ struct PlayerView: View {
             || isOptionsPresented
     }
 
-    @ViewBuilder
-    private var playerSurface: some View {
-        switch viewModel.activePlayer {
-        case .none:
-            Color.black.ignoresSafeArea()
-        case .avPlayer(let backend):
-            AVPlayerSurface(backend: backend)
-                .ignoresSafeArea()
-        case .coreMedia(let core):
-            PlayerSurface(player: core)
-                .ignoresSafeArea()
+    /// Transport keyboard shortcuts, matching the conventions Mac video
+    /// players share. Returning `.ignored` lets anything unrecognised carry on
+    /// to the responder chain — menu shortcuts still work.
+    private func handleKeyPress(_ press: KeyPress) -> KeyPress.Result {
+        let modifiers = press.modifiers.intersection([.command, .control, .shift, .option])
+
+        switch press.key {
+        case .space:
+            viewModel.togglePlayPause()
+        case .leftArrow:
+            modifiers.contains(.command)
+                ? viewModel.seekToAdjacentChapter(forward: false)
+                : viewModel.skipBackward(15)
+        case .rightArrow:
+            modifiers.contains(.command)
+                ? viewModel.seekToAdjacentChapter(forward: true)
+                : viewModel.skipForward(15)
+        case .escape:
+            // Unwind one layer at a time, the way Mac apps do: close the
+            // options popover, then leave fullscreen, and only close the
+            // player once there is nothing left to back out of.
+            if isOptionsPresented {
+                isOptionsPresented = false
+            } else if windowChrome?.exitFullScreenIfNeeded() != true {
+                close()
+            }
+        default:
+            return handleCharacterPress(press.characters, modifiers: modifiers)
         }
+        return .handled
     }
 
-    private func handleCommand(_ command: MacPlayerCommand) {
-        switch command {
-        case .playPause:
-            viewModel.togglePlayPause()
-        case .skipBackward:
-            viewModel.skipBackward(15)
-        case .skipForward:
-            viewModel.skipForward(15)
-        case .previousChapter:
-            viewModel.seekToAdjacentChapter(forward: false)
-        case .nextChapter:
-            viewModel.seekToAdjacentChapter(forward: true)
-        case .cycleAudio:
+    private func handleCharacterPress(
+        _ characters: String,
+        modifiers: EventModifiers
+    ) -> KeyPress.Result {
+        let isControlCommand = modifiers.contains(.control) && modifiers.contains(.command)
+
+        switch characters.lowercased() {
+        // ⌃⌘F is the system fullscreen shortcut; bare F is the convention
+        // every Mac video player also honors.
+        case "f" where isControlCommand || modifiers.isEmpty:
+            windowChrome?.toggleFullScreen()
+        case "a" where isControlCommand:
             viewModel.cycleAudioTrack()
-        case .cycleSubtitle:
+        case "s" where isControlCommand:
             viewModel.cycleSubtitleTrack()
-        case .toggleSubtitle:
+        case "g" where isControlCommand:
             viewModel.toggleSubtitles()
-        case .options:
+        case "s" where modifiers.contains(.command):
             selectedOptionsTab = .audio
             isOptionsPresented.toggle()
             viewModel.revealControls()
-        case .escape:
-            if isOptionsPresented {
-                isOptionsPresented = false
-            } else {
-                dismiss()
-            }
-        case .speedDown:
-            viewModel.setPlaybackSpeed(nextSpeed(offset: -1))
-        case .speedUp:
-            viewModel.setPlaybackSpeed(nextSpeed(offset: 1))
-        case .normalSpeed:
+        case "[" where modifiers.contains(.shift) && modifiers.contains(.command):
             viewModel.setPlaybackSpeed(1.0)
+        case "[" where modifiers.contains(.shift):
+            viewModel.setPlaybackSpeed(nextSpeed(offset: -1))
+        case "]" where modifiers.contains(.shift):
+            viewModel.setPlaybackSpeed(nextSpeed(offset: 1))
+        default:
+            return .ignored
         }
+        return .handled
     }
 
     private func nextSpeed(offset: Int) -> Double {
@@ -210,7 +293,7 @@ struct PlayerView: View {
                 .buttonStyle(.borderedProminent)
 
                 Button("Close") {
-                    dismiss()
+                    close()
                 }
                 .keyboardShortcut(.cancelAction)
             }

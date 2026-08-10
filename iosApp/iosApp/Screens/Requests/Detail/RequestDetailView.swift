@@ -95,7 +95,7 @@ struct RequestDetailView: View {
     private func phoneHero(_ detail: RequestMediaDetail) -> some View {
         ZStack(alignment: .bottomLeading) {
             if let backdrop = RequestImageURL.build(detail.backdropPath, size: .backdrop) {
-                AsyncImageView(url: backdrop, contentMode: .fill)
+                CachedAsyncImage(url: backdrop, contentMode: .fill)
                     .frame(height: 210)
                     .frame(maxWidth: .infinity)
                     .clipped()
@@ -114,7 +114,7 @@ struct RequestDetailView: View {
 
             HStack(alignment: .bottom, spacing: ContinuumTheme.padding) {
                 if let poster = RequestImageURL.build(detail.posterPath, size: .poster) {
-                    AsyncImageView(url: poster, contentMode: .fill)
+                    CachedAsyncImage(url: poster, contentMode: .fill)
                         .frame(width: 96, height: 144)
                         .clipShape(RoundedRectangle(cornerRadius: ContinuumTheme.cornerRadius))
                         .shadow(color: .black.opacity(0.5), radius: 12, y: 6)
@@ -146,7 +146,7 @@ struct RequestDetailView: View {
     private func tvBackdrop(_ detail: RequestMediaDetail) -> some View {
         Group {
             if let backdrop = RequestImageURL.build(detail.backdropPath, size: .backdrop) {
-                AsyncImageView(url: backdrop, contentMode: .fill)
+                CachedAsyncImage(url: backdrop, contentMode: .fill)
             } else {
                 Color.continuumSurface
             }

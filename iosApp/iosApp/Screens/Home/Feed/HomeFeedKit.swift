@@ -17,8 +17,6 @@ enum HomeFeedMetrics {
     /// Wider than today's 120pt. At 120 the cards read as thumbnails against
     /// 24pt row gaps; the screen ends up feeling sparse rather than spacious.
     static let posterWidth: CGFloat = 132
-    /// Poster Wall trades size for count.
-    static let densePosterWidth: CGFloat = 104
     /// 16:9 still used by resume rows. Tuned so a still row shows the same
     /// "two cards plus a peek" as a poster row — at 210 the stills were
     /// noticeably less dense than the 132pt posters directly below them, which
@@ -56,20 +54,12 @@ enum HomeFeed {
 // MARK: - Metadata formatting
 
 enum HomeFeedMeta {
-    static func runtime(minutes: Int?) -> String? {
-        guard let minutes, minutes > 0 else { return nil }
-        let hours = minutes / 60
-        let remainder = minutes % 60
-        if hours > 0, remainder > 0 { return "\(hours)h \(remainder)m" }
-        if hours > 0 { return "\(hours)h" }
-        return "\(remainder)m"
-    }
 
     static func remaining(position: Double?, duration: Double?) -> String? {
         guard let position, let duration, duration > 0, position > 0 else { return nil }
         let minutesLeft = Int((duration - position) / 60)
         guard minutesLeft > 0 else { return nil }
-        return runtime(minutes: minutesLeft).map { "\($0) left" }
+        return PlayerTimeFormatter.formatRuntime(minutes: minutesLeft).map { "\($0) left" }
     }
 
     static func progress(for item: SectionItem) -> Double? {
@@ -79,20 +69,12 @@ enum HomeFeedMeta {
         return min(max(position / duration, 0), 1)
     }
 
-    /// "1968  ·  Horror  ·  1h 36m" — the meta line under a hero title.
-    static func heroLine(for item: SectionItem, maxGenres: Int = 2) -> String {
-        var parts: [String] = []
-        if let year = item.year { parts.append(String(year)) }
-        if let genres = item.genres, !genres.isEmpty {
-            parts.append(contentsOf: genres.prefix(maxGenres))
-        }
-        if let runtime = runtime(minutes: item.runtime) { parts.append(runtime) }
-        return parts.joined(separator: "  ·  ")
-    }
-
     static func episodeCode(for item: SectionItem) -> String? {
-        guard let season = item.seasonNumber, let episode = item.episodeNumber else { return nil }
-        return "S\(season) E\(episode)"
+        EpisodeCode.format(
+            season: item.seasonNumber,
+            episode: item.episodeNumber,
+            style: .compact
+        )
     }
 
     /// Caption under a resume still — "S2 E4  ·  23m left".
@@ -330,7 +312,7 @@ struct HomePosterCard: View {
     }
 
     private var artwork: some View {
-        AsyncImageView(
+        CachedAsyncImage(
             url: item.posterUrl ?? "",
             thumbhash: item.posterThumbhash,
             targetSize: CGSize(width: width, height: height),
@@ -353,8 +335,7 @@ struct HomePosterCard: View {
             if overlayStore.enabled {
                 CardOverlays(
                     data: OverlayData.from(item),
-                    prefs: overlayStore.prefs,
-                    variant: .poster
+                    prefs: overlayStore.prefs
                 )
                 .frame(width: width, height: height)
                 .clipShape(
@@ -441,7 +422,6 @@ struct HomeStillCard: View {
 
     /// Optimistic watched state, shared with the menu — see `HomePosterCard`.
     @State private var playedOverride: Bool?
-    @EnvironmentObject private var overlayStore: OverlayPrefsStore
 
     private var isPlayed: Bool { playedOverride ?? (item.userState?.played == true) }
 
@@ -479,7 +459,7 @@ struct HomeStillCard: View {
 
     private var artwork: some View {
         ZStack(alignment: .bottom) {
-            AsyncImageView(
+            CachedAsyncImage(
                 url: art.url,
                 thumbhash: art.thumbhash,
                 targetSize: CGSize(width: width, height: height),
@@ -498,21 +478,6 @@ struct HomeStillCard: View {
             .frame(height: height * 0.6)
             .frame(maxHeight: .infinity, alignment: .bottom)
             .allowsHitTesting(false)
-
-            if overlayStore.enabled {
-                CardOverlays(
-                    data: OverlayData.from(item),
-                    prefs: overlayStore.prefs,
-                    variant: .wide
-                )
-                .frame(width: width, height: height)
-                .clipShape(
-                    RoundedRectangle(
-                        cornerRadius: HomeFeedMetrics.stillRadius,
-                        style: .continuous
-                    )
-                )
-            }
 
             if let progress = HomeFeedMeta.progress(for: item) {
                 ProgressBar(value: progress)
