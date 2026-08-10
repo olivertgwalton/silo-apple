@@ -50,41 +50,13 @@ enum AdaptiveColumns {
             return max(minimumCount, standardCount - 1)
         }
     }
-
-    /// Narrows `preferredCount` to the columns that actually fit
-    /// `availableWidth`.
-    ///
-    /// tvOS cards keep a fixed frame — the focus lift needs a stable one — so
-    /// unlike the phone grids the column *count* is the only free variable.
-    /// A screen that owns the full width gets its preferred count back
-    /// untouched; one the system shares with something else (search, which
-    /// gives half the screen to the keyboard panel) drops columns instead of
-    /// drawing the last one past the edge.
-    static func tvPosterCountThatFits(
-        preferredCount: Int,
-        availableWidth: CGFloat,
-        cardWidth: CGFloat,
-        spacing: CGFloat,
-        minimumCount: Int = 3
-    ) -> Int {
-        // Before the first layout pass reports a width, trust the preference —
-        // same "never wildly wrong on frame one" rule as `posters`.
-        guard availableWidth > 0, cardWidth > 0 else { return preferredCount }
-        // Half a point of slack: a count that fits exactly (six standard
-        // posters in the 1,760pt content column) must survive a measurement
-        // that lands a hair under its own layout width.
-        let fitted = Int((availableWidth + spacing + 0.5) / (cardWidth + spacing))
-        return min(preferredCount, max(minimumCount, fitted))
-    }
 }
 
-extension View {
-    /// Caps form/content width so text fields and buttons don't stretch
-    /// edge-to-edge on iPad. iPhones are already narrower than the cap, so
-    /// this is a no-op on phone. The second `frame` centers the capped view.
-    func continuumFormWidth(_ maxWidth: CGFloat = 600) -> some View {
-        self
-            .frame(maxWidth: maxWidth)
-            .frame(maxWidth: .infinity, alignment: .center)
+extension Comparable {
+    /// Pins a measured dimension inside the range a layout will accept.
+    /// Reads as the intent — "a quarter of the container, between 164 and
+    /// 224" — where nested `min(max(…))` reads as arithmetic.
+    func clamped(to range: ClosedRange<Self>) -> Self {
+        min(max(self, range.lowerBound), range.upperBound)
     }
 }

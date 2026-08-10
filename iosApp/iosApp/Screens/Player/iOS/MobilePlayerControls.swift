@@ -191,7 +191,7 @@ struct MobilePlayerControls: View {
                     .foregroundStyle(.white.opacity(0.65))
                     .lineLimit(1)
             }
-            Text(heroTitle)
+            Text(viewModel.heroTitle)
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.white)
                 .lineLimit(1)
@@ -218,11 +218,6 @@ struct MobilePlayerControls: View {
         }
         guard !parts.isEmpty else { return nil }
         return parts.joined(separator: " · ").uppercased()
-    }
-
-    private var heroTitle: String {
-        let primary = viewModel.metadata.primaryTitle
-        return primary.isEmpty ? viewModel.title : primary
     }
 
     // MARK: - Center
@@ -297,7 +292,7 @@ struct MobilePlayerControls: View {
 
     private var timeRow: some View {
         HStack {
-            Text(PlayerTimeFormatter.formatHMS(displayTime))
+            Text(PlayerTimeFormatter.formatHMS(viewModel.displayTime))
                 .font(.caption2)
                 .foregroundStyle(.white.opacity(0.85))
                 .monospacedDigit()
@@ -329,7 +324,7 @@ struct MobilePlayerControls: View {
 
     private var trailingTimeText: String {
         if showsRemainingTime {
-            return "−" + PlayerTimeFormatter.formatHMS(max(viewModel.duration - displayTime, 0))
+            return "−" + PlayerTimeFormatter.formatHMS(viewModel.remainingTime)
         }
         return PlayerTimeFormatter.formatHMS(viewModel.duration)
     }
@@ -349,18 +344,12 @@ struct MobilePlayerControls: View {
         .overlay(Capsule().stroke(.white.opacity(0.16), lineWidth: 0.5))
     }
 
-    private var displayTime: Double {
-        viewModel.isScrubbing ? viewModel.scrubPreviewTime : viewModel.currentTime
-    }
-
     // MARK: - Scrubber
 
     private var progressSlider: some View {
         GeometryReader { geo in
             let width = geo.size.width
-            let progress = viewModel.duration > 0
-                ? min(max(displayTime / viewModel.duration, 0), 1)
-                : 0
+            let progress = viewModel.timelineFraction
             let barHeight: CGFloat = viewModel.isScrubbing ? 12 : 6
 
             ZStack(alignment: .leading) {
@@ -371,7 +360,7 @@ struct MobilePlayerControls: View {
 
                 // Buffered range (AVPlayer routes only; CoreMedia reports 0
                 // so the layer simply never draws).
-                if let buffered = bufferedFraction, buffered > progress {
+                if let buffered = viewModel.bufferedFraction, buffered > progress {
                     Capsule()
                         .fill(Color.white.opacity(0.22))
                         .frame(width: max(width * buffered, barHeight), height: barHeight)
@@ -431,7 +420,7 @@ struct MobilePlayerControls: View {
             .accessibilityElement()
             .accessibilityLabel("Playback Position")
             .accessibilityValue(
-                "\(PlayerTimeFormatter.formatHMS(displayTime)) of \(PlayerTimeFormatter.formatHMS(viewModel.duration))"
+                "\(PlayerTimeFormatter.formatHMS(viewModel.displayTime)) of \(PlayerTimeFormatter.formatHMS(viewModel.duration))"
             )
             .accessibilityAdjustableAction { direction in
                 switch direction {
@@ -442,12 +431,6 @@ struct MobilePlayerControls: View {
             }
         }
         .frame(height: 20)
-    }
-
-    private var bufferedFraction: Double? {
-        guard viewModel.duration > 0, viewModel.bufferedAheadSeconds > 0 else { return nil }
-        let end = (viewModel.currentTime + viewModel.bufferedAheadSeconds) / viewModel.duration
-        return min(max(end, 0), 1)
     }
 
     /// Floating time + chapter readout pinned above the touch point while

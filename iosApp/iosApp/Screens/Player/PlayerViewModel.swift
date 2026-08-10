@@ -97,7 +97,9 @@ struct PlayerNextUpEpisode: Identifiable, Hashable {
     let airDate: String?
 
     var id: String { contentId }
-    var episodeLabel: String { "S\(seasonNumber):E\(episodeNumber)" }
+    var episodeLabel: String {
+        EpisodeCode.format(season: seasonNumber, episode: episodeNumber, style: .player)
+    }
 
     init(episode: EpisodeListItem, seriesId: String?, seriesTitle: String?) {
         contentId = episode.contentId
@@ -142,7 +144,11 @@ struct PlayerOnDeckItem: Identifiable, Hashable {
 
     var secondaryTitle: String? {
         guard let seasonNumber, let episodeNumber else { return nil }
-        let episodeLabel = "S\(seasonNumber):E\(episodeNumber)"
+        let episodeLabel = EpisodeCode.format(
+            season: seasonNumber,
+            episode: episodeNumber,
+            style: .player
+        )
         if seriesTitle?.isEmpty == false, !title.isEmpty {
             return "\(episodeLabel) · \(title)"
         }
@@ -477,6 +483,43 @@ class PlayerViewModel {
     var showIntroSkip: Bool {
         guard let introRange else { return false }
         return currentTime >= introRange.start && currentTime < introRange.end
+    }
+
+    // MARK: - Derived timeline state
+    //
+    // Read by both control layers. The touch and Siri Remote controls are
+    // genuinely different interaction models and stay separate views, but
+    // what the timeline *says* is one answer, and each had its own copy of
+    // these until they started to disagree about buffered-ahead clamping.
+
+    /// The time the controls should display: the scrub preview while the
+    /// user is dragging or stepping, otherwise the real playhead.
+    var displayTime: Double {
+        isScrubbing ? scrubPreviewTime : currentTime
+    }
+
+    /// `displayTime` as a 0...1 position along the timeline.
+    var timelineFraction: Double {
+        guard duration > 0 else { return 0 }
+        return (displayTime / duration).clamped(to: 0...1)
+    }
+
+    /// How far the buffer reaches as a 0...1 position, or `nil` when nothing
+    /// is buffered ahead — callers that draw a track behind the playhead want
+    /// to omit it entirely rather than draw a zero-width one.
+    var bufferedFraction: Double? {
+        guard duration > 0, bufferedAheadSeconds > 0 else { return nil }
+        return ((currentTime + bufferedAheadSeconds) / duration).clamped(to: 0...1)
+    }
+
+    var remainingTime: Double {
+        max(0, duration - displayTime)
+    }
+
+    /// Title for the controls, falling back to the session title when the
+    /// metadata payload hasn't resolved a primary title yet.
+    var heroTitle: String {
+        metadata.primaryTitle.isEmpty ? title : metadata.primaryTitle
     }
 
     /// Signed rate of an in-flight seek session. Zero when the user isn't
@@ -1222,10 +1265,6 @@ class PlayerViewModel {
         core.setHDREnabled(settings.hdrEnabled)
         // Dolby Vision policy must be in place before load() runs DV routing.
         core.dolbyVisionPolicy = settings.dolbyVisionPolicySnapshot
-    }
-
-    private func installFreshPrimaryCore() {
-        installPlayer(for: .playerCoreDirect)
     }
 
     private func installPlayer(for engine: PlaybackEngineKind) {
@@ -6360,20 +6399,6 @@ class PlayerViewModel {
         let isEligible: Bool
         let blockers: [String]
         let trace: [String]
-    }
-
-    private func shouldUseH264ContainerLoopback(
-        selectedVersion: FileVersion,
-        nativeAssessment: NativeDirectAssessment
-    ) -> Bool {
-        guard isH264Video(selectedVersion) else { return false }
-        guard nativeAssessment.blockers.contains("container_not_allowlisted") else { return false }
-
-        let expectedBlockers: Set<String> = [
-            "container_not_allowlisted",
-            "embedded_subtitles_require_compatibility"
-        ]
-        return Set(nativeAssessment.blockers).subtracting(expectedBlockers).isEmpty
     }
 
     private func assessNativeDirectRoute(
