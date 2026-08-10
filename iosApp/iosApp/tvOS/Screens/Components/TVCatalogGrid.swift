@@ -65,8 +65,18 @@ struct TVCatalogGrid: View {
         )
     }
 
-    private var rowStartIndices: [Int] {
-        stride(from: 0, to: items.count, by: resolvedColumnCount).map { $0 }
+    /// One display row. `id` is the index the row starts at, which each cell
+    /// adds its own offset to when reporting its absolute position.
+    private struct Row: Identifiable {
+        let id: Int
+        let items: [BrowseItem]
+    }
+
+    private var rows: [Row] {
+        let count = resolvedColumnCount
+        return stride(from: 0, to: items.count, by: count).map { start in
+            Row(id: start, items: Array(items[start..<min(start + count, items.count)]))
+        }
     }
 
     var body: some View {
@@ -76,10 +86,9 @@ struct TVCatalogGrid: View {
         // has no focusable under most columns. The row's full-width section
         // frame is the catchment; the engine snaps to its nearest card.
         LazyVStack(alignment: .leading, spacing: rowSpacing) {
-            ForEach(rowStartIndices, id: \.self) { rowStart in
+            ForEach(rows) { row in
                 HStack(alignment: .top, spacing: columnSpacing) {
-                    ForEach(IndexedItems(rowItems(from: rowStart))) { indexed in
-                        let item = indexed.element
+                    ForEach(Array(row.items.enumerated()), id: \.element.id) { offset, item in
                         TVMediaCard(
                             title: item.title,
                             posterUrl: item.posterUrl ?? "",
@@ -92,18 +101,18 @@ struct TVCatalogGrid: View {
                             cardWidth: cardWidth,
                             aspect: item.isAudiobook ? .square : .poster,
                             prefersDefaultFocus: prefersDefaultFocusOnFirstItem
-                                && rowStart == 0 && indexed.index == 0,
+                                && row.id == 0 && offset == 0,
                             defaultFocusNamespace: gridFocusNamespace,
                             focusBinding: $focusedItemId,
                             focusContentId: item.contentId,
                             contentId: item.contentId
                         )
                         .frame(maxWidth: .infinity)
-                        .onAppear { onCellAppear(index: rowStart + indexed.index) }
+                        .onAppear { onCellAppear(index: row.id + offset) }
                     }
                     // Keep ragged-row cards in their column positions by
                     // filling the empty slots with equally flexible spacers.
-                    ForEach(0..<emptySlotCount(from: rowStart), id: \.self) { _ in
+                    ForEach(0..<(resolvedColumnCount - row.items.count), id: \.self) { _ in
                         Color.clear
                             .frame(maxWidth: .infinity)
                             .frame(height: 1)
@@ -128,14 +137,6 @@ struct TVCatalogGrid: View {
                 Spacer()
             }
         }
-    }
-
-    private func rowItems(from rowStart: Int) -> [BrowseItem] {
-        Array(items[rowStart..<min(rowStart + resolvedColumnCount, items.count)])
-    }
-
-    private func emptySlotCount(from rowStart: Int) -> Int {
-        resolvedColumnCount - rowItems(from: rowStart).count
     }
 
     private func onCellAppear(index: Int) {
@@ -165,34 +166,4 @@ struct TVCatalogGrid: View {
     }
 }
 
-private struct IndexedItems<Base: RandomAccessCollection>: RandomAccessCollection
-where Base.Index == Int, Base.Element: Identifiable {
-    let base: Base
-
-    init(_ base: Base) {
-        self.base = base
-    }
-
-    var startIndex: Int { base.startIndex }
-    var endIndex: Int { base.endIndex }
-
-    func index(after i: Int) -> Int {
-        base.index(after: i)
-    }
-
-    func index(before i: Int) -> Int {
-        base.index(before: i)
-    }
-
-    subscript(position: Int) -> IndexedItem<Base.Element> {
-        IndexedItem(index: position, element: base[position])
-    }
-}
-
-private struct IndexedItem<Element: Identifiable>: Identifiable {
-    let index: Int
-    let element: Element
-
-    var id: Element.ID { element.id }
-}
 #endif
