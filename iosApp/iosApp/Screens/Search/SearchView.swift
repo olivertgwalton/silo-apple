@@ -129,20 +129,6 @@ struct SearchView: View {
                 .font(.continuumCaption)
                 .foregroundColor(.continuumSecondaryText)
 
-#if os(tvOS)
-            TVCatalogGrid(
-                items: viewModel.results,
-                isLoading: viewModel.isLoadingMore,
-                hasMore: viewModel.hasMore,
-                onItemTap: { router.navigate(to: .itemDetail(contentId: $0)) },
-                onNearEnd: { _ in
-                    Task { await viewModel.loadMore() }
-                },
-                cardWidth: resultCardWidth,
-                availableWidth: resultsWidth,
-                prefersDefaultFocusOnFirstItem: true
-            )
-#else
             CatalogGrid(
                 items: viewModel.results,
                 isLoading: viewModel.isLoadingMore,
@@ -150,9 +136,11 @@ struct SearchView: View {
                 onItemTap: { router.navigate(to: .itemDetail(contentId: $0)) },
                 onLoadMore: {
                     Task { await viewModel.loadMore() }
-                }
+                },
+                cardWidth: resultCardWidth,
+                availableWidth: resultsWidth,
+                prefersDefaultFocusOnFirstItem: true
             )
-#endif
         }
     }
 
