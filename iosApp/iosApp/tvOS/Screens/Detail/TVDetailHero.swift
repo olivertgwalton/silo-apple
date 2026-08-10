@@ -1,6 +1,29 @@
 #if os(tvOS)
 import SwiftUI
 
+/// The layout constants this hero is built from. Named rather than inline so
+/// the composition — how much viewport the hero claims, how much of the next
+/// rail is left peeking — is readable without measuring the view.
+private enum HeroLayout {
+    /// Just short of the full 1080 viewport, so the rail below peeks and the
+    /// viewer instinctively drifts down rather than reaching an "end".
+    static let heroHeight: CGFloat = 980
+    /// Keeps the editorial column off the backdrop's bright right side.
+    static let contentMaxWidth: CGFloat = 1200
+    static let blockSpacing: CGFloat = 24
+    /// The detail pages' outer VStack adds its own hero-to-section spacing,
+    /// so a large inset here reads as a dead band under the selector row.
+    static let bottomInset: CGFloat = 48
+    static let actionsTopInset: CGFloat = 8
+
+    static let logoMaxWidth: CGFloat = 620
+    static let logoMaxHeight: CGFloat = 220
+
+    static let starringMaxWidth: CGFloat = 460
+    /// Floats the starring line at mid-hero, clear of the editorial column.
+    static let starringHeightFraction: CGFloat = 0.45
+}
+
 /// Full-bleed cinematic hero for the tvOS item-detail screen. Modeled
 /// after Apple TV's detail page: a nearly full-viewport backdrop layered
 /// with a tall left-column editorial stack (eyebrow pill → title →
@@ -39,8 +62,6 @@ struct TVDetailHero<Actions: View, BelowSynopsis: View>: View {
     /// nothing to show.
     @ViewBuilder let belowSynopsis: () -> BelowSynopsis
 
-    private let heroHeight: CGFloat = 980
-    private let contentMaxWidth: CGFloat = 1200
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
@@ -50,7 +71,7 @@ struct TVDetailHero<Actions: View, BelowSynopsis: View>: View {
             content
         }
         .overlay(alignment: .trailing) { starringOverlay }
-        .frame(height: heroHeight)
+        .frame(height: HeroLayout.heroHeight)
         .frame(maxWidth: .infinity)
         .clipped()
     }
@@ -65,7 +86,7 @@ struct TVDetailHero<Actions: View, BelowSynopsis: View>: View {
                 Color.continuumSurface
             }
         }
-        .frame(height: heroHeight)
+        .frame(height: HeroLayout.heroHeight)
         .frame(maxWidth: .infinity)
     }
 
@@ -102,7 +123,7 @@ struct TVDetailHero<Actions: View, BelowSynopsis: View>: View {
     // MARK: - Content column
 
     private var content: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: HeroLayout.blockSpacing) {
             editorialColumn
 
             // Give the action cluster the full hero width with leading
@@ -113,22 +134,19 @@ struct TVDetailHero<Actions: View, BelowSynopsis: View>: View {
             // Still a full-width focus destination so lower rails can move
             // "up" into this cluster even from a far-right card.
             actions()
-                .padding(.top, 8)
+                .padding(.top, HeroLayout.actionsTopInset)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .focusSection()
         }
         .padding(.leading, ContinuumTheme.safePadding)
         .padding(.trailing, ContinuumTheme.safePadding)
-        // Keep this tight: the detail pages' outer VStack already adds its
-        // own spacing between the hero and the first content section, so a
-        // large inset here reads as a dead band under the selector row.
-        .padding(.bottom, 48)
+        .padding(.bottom, HeroLayout.bottomInset)
     }
 
     private var editorialColumn: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: HeroLayout.blockSpacing) {
             if let eyebrow, !eyebrow.isEmpty {
-                TVHeroEyebrow(text: eyebrow)
+                HeroEyebrow(text: eyebrow, floatsOverArtwork: true)
             }
             titleBlock
                 .padding(.top, eyebrow == nil ? 0 : 4)
@@ -139,19 +157,28 @@ struct TVDetailHero<Actions: View, BelowSynopsis: View>: View {
             belowSynopsis()
             factsRow
         }
-        .frame(maxWidth: contentMaxWidth, alignment: .leading)
+        .frame(maxWidth: HeroLayout.contentMaxWidth, alignment: .leading)
     }
 
     @ViewBuilder
     private var titleBlock: some View {
         if let episodeSeriesTitle {
-            TVEpisodeHierarchyTitle(seriesTitle: episodeSeriesTitle, episodeTitle: title)
+            HeroEpisodeHierarchyTitle(
+                seriesTitle: episodeSeriesTitle,
+                episodeTitle: title,
+                textAlignment: .leading,
+                floatsOverArtwork: true
+            )
         } else if let logoUrl, !logoUrl.isEmpty {
             CachedAsyncImage(url: logoUrl, contentMode: .fit, placeholderStyle: .clear)
-                .frame(maxWidth: 620, maxHeight: 220, alignment: .bottomLeading)
+                .frame(
+                    maxWidth: HeroLayout.logoMaxWidth,
+                    maxHeight: HeroLayout.logoMaxHeight,
+                    alignment: .bottomLeading
+                )
                 .accessibilityLabel(title)
         } else {
-            TVHeroTitle(title: title)
+            HeroTitle(title: title, textAlignment: .leading, floatsOverArtwork: true)
         }
     }
 
@@ -164,83 +191,18 @@ struct TVDetailHero<Actions: View, BelowSynopsis: View>: View {
 
     // MARK: - Source row (type · genre · rating-chip)
 
-    @ViewBuilder
     private var sourceRow: some View {
-        if !sourceTokens.isEmpty || ratingChip != nil {
-            HStack(spacing: 14) {
-                ForEach(Array(sourceTokens.enumerated()), id: \.offset) { index, token in
-                    if index > 0 {
-                        Text("·")
-                            .font(.system(size: 24, weight: .semibold))
-                            .foregroundColor(Color.white.opacity(0.5))
-                    }
-                    Text(token)
-                        .font(.system(size: 26, weight: .medium))
-                        .foregroundColor(Color.white.opacity(0.92))
-                }
-                if let ratingChip, !ratingChip.isEmpty {
-                    Text(ratingChip)
-                        .font(.system(size: 20, weight: .heavy))
-                        .tracking(1.0)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 4)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 5)
-                                .stroke(Color.white.opacity(0.7), lineWidth: 1.5)
-                        )
-                        .padding(.leading, 4)
-                }
-            }
-        }
+        HeroSourceRow(
+            tokens: sourceTokens,
+            ratingChip: ratingChip,
+            textAlignment: .leading
+        )
     }
 
     // MARK: - Facts + quality row
 
-    @ViewBuilder
     private var factsRow: some View {
-        if !factsLine.isEmpty {
-            HStack(spacing: 14) {
-                ForEach(Array(factsLine.enumerated()), id: \.offset) { index, token in
-                    if index > 0, case .text = token, case .text = factsLine[index - 1] {
-                        Text("·")
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundColor(Color.white.opacity(0.45))
-                    }
-                    factsItem(token)
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func factsItem(_ token: DetailHeroFactToken) -> some View {
-        switch token {
-        case .text(let value):
-            Text(value)
-                .font(.system(size: 22, weight: .medium))
-                .foregroundColor(Color.white.opacity(0.88))
-        case .rating(let value):
-            HStack(spacing: 6) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(Color.continuumSuccess.opacity(0.9))
-                Text(value)
-                    .font(.system(size: 22, weight: .medium))
-                    .foregroundColor(Color.white.opacity(0.88))
-            }
-        case .chip(let value):
-            Text(value)
-                .font(.system(size: 16, weight: .heavy))
-                .tracking(1.0)
-                .foregroundColor(.white)
-                .padding(.horizontal, 9)
-                .padding(.vertical, 4)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 4)
-                        .stroke(Color.white.opacity(0.65), lineWidth: 1.2)
-                )
-        }
+        HeroFactsRow(tokens: factsLine, alignment: .leading)
     }
 
     // MARK: - Starring overlay (right-aligned, vertical center)
@@ -249,176 +211,16 @@ struct TVDetailHero<Actions: View, BelowSynopsis: View>: View {
     private var starringOverlay: some View {
         if let starringText, !starringText.isEmpty {
             Text(starringText)
-                .font(.system(size: 24, weight: .regular))
+                .font(.continuumBody)
                 .foregroundColor(Color.white.opacity(0.8))
                 .multilineTextAlignment(.trailing)
                 .lineLimit(2)
-                .frame(maxWidth: 460, alignment: .trailing)
+                .frame(maxWidth: HeroLayout.starringMaxWidth, alignment: .trailing)
                 .shadow(color: .black.opacity(0.55), radius: 6, y: 2)
                 .padding(.trailing, ContinuumTheme.safePadding)
-                .padding(.bottom, heroHeight * 0.45)
+                .padding(.bottom, HeroLayout.heroHeight * HeroLayout.starringHeightFraction)
         }
     }
 }
 
-// MARK: - Title treatment
-
-/// Heavy condensed display title. Splits on ": " into title + subtitle
-/// when the source title contains a colon — e.g. "Monarch: Legacy of
-/// Monsters" becomes a two-line composition with a larger lead and a
-/// smaller, still-heavy underline, matching the Apple TV wordmark
-/// treatment.
-private struct TVHeroTitle: View {
-    let title: String
-
-    var body: some View {
-        let parts = split(title)
-        VStack(alignment: .leading, spacing: 4) {
-            Text(parts.primary.uppercased())
-                .font(primaryFont)
-                .foregroundColor(.white)
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
-                .shadow(color: .black.opacity(0.55), radius: 16, y: 4)
-            if let subtitle = parts.subtitle {
-                Text(subtitle.uppercased())
-                    .font(subtitleFont)
-                    .foregroundColor(Color.white.opacity(0.95))
-                    .tracking(1.5)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .shadow(color: .black.opacity(0.5), radius: 10, y: 3)
-            }
-        }
-    }
-
-    private var primaryFont: Font {
-        if #available(tvOS 16.0, *) {
-            return .system(size: 92, weight: .black).width(.compressed)
-        }
-        return .system(size: 88, weight: .black)
-    }
-
-    private var subtitleFont: Font {
-        if #available(tvOS 16.0, *) {
-            return .system(size: 40, weight: .heavy).width(.compressed)
-        }
-        return .system(size: 38, weight: .heavy)
-    }
-
-    private func split(_ raw: String) -> (primary: String, subtitle: String?) {
-        let separators: [String] = [": ", " — ", " – ", " - "]
-        for sep in separators {
-            if let range = raw.range(of: sep) {
-                let head = String(raw[..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
-                let tail = String(raw[range.upperBound...]).trimmingCharacters(in: .whitespaces)
-                if !head.isEmpty, !tail.isEmpty {
-                    return (head, tail)
-                }
-            }
-        }
-        return (raw, nil)
-    }
-}
-
-private struct TVEpisodeHierarchyTitle: View {
-    let seriesTitle: String
-    let episodeTitle: String
-
-    var body: some View {
-        let parts = split(episodeTitle)
-        VStack(alignment: .leading, spacing: 10) {
-            Text(seriesTitle.uppercased())
-                .font(seriesFont)
-                .foregroundColor(.white)
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
-                .shadow(color: .black.opacity(0.55), radius: 16, y: 4)
-            Text(parts.primary)
-                .font(episodeFont)
-                .foregroundColor(Color.white.opacity(0.94))
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
-                .shadow(color: .black.opacity(0.5), radius: 10, y: 3)
-            if let subtitle = parts.subtitle {
-                Text(subtitle.uppercased())
-                    .font(subtitleFont)
-                    .foregroundColor(Color.white.opacity(0.82))
-                    .tracking(1.2)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .shadow(color: .black.opacity(0.45), radius: 8, y: 2)
-            }
-        }
-    }
-
-    private var seriesFont: Font {
-        if #available(tvOS 16.0, *) {
-            return .system(size: 92, weight: .black).width(.compressed)
-        }
-        return .system(size: 88, weight: .black)
-    }
-
-    private var episodeFont: Font {
-        if #available(tvOS 16.0, *) {
-            return .system(size: 50, weight: .heavy).width(.compressed)
-        }
-        return .system(size: 48, weight: .heavy)
-    }
-
-    private var subtitleFont: Font {
-        if #available(tvOS 16.0, *) {
-            return .system(size: 32, weight: .heavy).width(.compressed)
-        }
-        return .system(size: 30, weight: .heavy)
-    }
-
-    private func split(_ raw: String) -> (primary: String, subtitle: String?) {
-        let separators: [String] = [": ", " — ", " – ", " - "]
-        for sep in separators {
-            if let range = raw.range(of: sep) {
-                let head = String(raw[..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
-                let tail = String(raw[range.upperBound...]).trimmingCharacters(in: .whitespaces)
-                if !head.isEmpty, !tail.isEmpty {
-                    return (head, tail)
-                }
-            }
-        }
-        return (raw, nil)
-    }
-}
-
-// MARK: - Eyebrow pill
-
-private struct TVHeroEyebrow: View {
-    let text: String
-
-    var body: some View {
-        Text(text)
-            .font(.system(size: 18, weight: .semibold))
-            .tracking(1.2)
-            .foregroundColor(.white)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(
-                Capsule()
-                    .fill(Color.black.opacity(0.55))
-                    .overlay(
-                        Capsule()
-                            .stroke(Color.white.opacity(0.18), lineWidth: 1)
-                    )
-            )
-    }
-}
-
-// MARK: - Tokens
-
-/// A token in the combined facts row. `.text` items get pipe separators
-/// between them; `.rating` renders a green check + maturity label;
-/// `.chip` renders an outlined pill (e.g. 4K / HDR / ATMOS).
 #endif

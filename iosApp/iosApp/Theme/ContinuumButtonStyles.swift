@@ -7,7 +7,7 @@ import SwiftUI
 /// press-scale tick — no stray focus chrome leaking in.
 ///
 /// Individual components that need their own focus visuals should opt in
-/// with a locally-scoped `ButtonStyle` (e.g. `TVPillButtonStyle`,
+/// with a locally-scoped `ButtonStyle` (e.g. `DetailPillButtonStyle`,
 /// `TVCircleButtonStyle`) — never with `.buttonStyle(.plain)` on tvOS,
 /// which still triggers the system highlight on `Button` bounds.
 struct ContinuumFlatButtonStyle: ButtonStyle {

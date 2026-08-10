@@ -312,7 +312,7 @@ struct AudiobookDetailContent: View {
     private var phoneSecondaryControls: some View {
         HStack(alignment: .top, spacing: 26) {
             phoneControl("Start Over") {
-                PhoneCircleActionButton(
+                DetailCircleActionButton(
                     icon: "arrow.counterclockwise",
                     accessibilityLabel: "Start Over"
                 ) {
@@ -326,7 +326,7 @@ struct AudiobookDetailContent: View {
 
             if !otherNarrations.isEmpty {
                 phoneControl("Narration") {
-                    PhoneCircleMenuButton(icon: "person.wave.2", accessibilityLabel: "Narration") {
+                    DetailCircleMenuButton(icon: "person.wave.2", accessibilityLabel: "Narration") {
                         ForEach(otherNarrations) { narration in
                             Button {
                                 onNavigateToItem(narration.contentId)

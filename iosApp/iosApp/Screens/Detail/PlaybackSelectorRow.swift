@@ -1,34 +1,7 @@
 #if !os(tvOS)
 import SwiftUI
 
-enum PhonePlaybackSelectorKind: String, Identifiable {
-    case edition
-    case version
-    case audio
-    case subtitles
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .edition: return "Edition"
-        case .version: return "Version"
-        case .audio: return "Audio"
-        case .subtitles: return "Subtitles"
-        }
-    }
-
-    var icon: String {
-        switch self {
-        case .edition: return "rectangle.stack"
-        case .version: return "4k.tv"
-        case .audio: return "speaker.wave.2"
-        case .subtitles: return "captions.bubble"
-        }
-    }
-}
-
-struct PhonePlaybackSelectorRow: View {
+struct PlaybackSelectorRow: View {
     let versions: [FileVersion]
     let currentVersion: FileVersion?
     let selectedVersionFileId: Int?
@@ -41,14 +14,20 @@ struct PhonePlaybackSelectorRow: View {
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     #endif
-    @State private var activeSelector: PhonePlaybackSelectorKind?
+    @State private var activeSelector: PlaybackSelectorKind?
 
-    private var editions: [PlaybackEditions.Edition] {
-        PlaybackEditions.editions(from: versions)
+    private var model: PlaybackSelectorModel {
+        PlaybackSelectorModel(
+            versions: versions,
+            currentVersion: currentVersion,
+            selectedVersionFileId: selectedVersionFileId,
+            selectedAudioTrackIndex: selectedAudioTrackIndex,
+            selectedSubtitleTrackIndex: selectedSubtitleTrackIndex
+        )
     }
 
     var body: some View {
-        if currentVersion != nil, !selectorKinds.isEmpty {
+        if currentVersion != nil, model.hasAnySelector {
             #if os(iOS)
             selectorCard
                 .popover(
@@ -68,9 +47,9 @@ struct PhonePlaybackSelectorRow: View {
     }
 
     private func selectorPresentation(
-        for kind: PhonePlaybackSelectorKind
-    ) -> PhonePlaybackSelectorSheet {
-        PhonePlaybackSelectorSheet(
+        for kind: PlaybackSelectorKind
+    ) -> PlaybackSelectorSheet {
+        PlaybackSelectorSheet(
             kinds: [kind],
             versions: versions,
             currentVersion: currentVersion,
@@ -104,7 +83,7 @@ struct PhonePlaybackSelectorRow: View {
     /// simply growing.
     private var selectorCard: some View {
         VStack(spacing: 0) {
-            ForEach(Array(selectorKinds.enumerated()), id: \.element.id) { index, kind in
+            ForEach(Array(model.kinds.enumerated()), id: \.element.id) { index, kind in
                 if index > 0 {
                     Rectangle()
                         .fill(Color.white.opacity(0.08))
@@ -125,13 +104,13 @@ struct PhonePlaybackSelectorRow: View {
 
                         Spacer(minLength: 12)
 
-                        Text(value(for: kind))
+                        Text(model.value(for: kind))
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(.white)
                             .lineLimit(1)
                             .truncationMode(.middle)
 
-                        if isInteractive(kind) {
+                        if model.isInteractive(kind) {
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 11, weight: .bold))
                                 .foregroundColor(.white.opacity(0.35))
@@ -156,113 +135,35 @@ struct PhonePlaybackSelectorRow: View {
     /// actually be changed, and leaves it inert when it cannot.
     @ViewBuilder
     private func selectorButton<Content: View>(
-        _ kind: PhonePlaybackSelectorKind,
+        _ kind: PlaybackSelectorKind,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        if isInteractive(kind) {
+        if model.isInteractive(kind) {
             Button { activeSelector = kind } label: { content() }
                 .buttonStyle(.plain)
-                .accessibilityLabel("\(kind.title), \(value(for: kind))")
+                .accessibilityLabel("\(kind.title), \(model.value(for: kind))")
         } else {
             content()
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(kind.title), \(value(for: kind))")
+                .accessibilityLabel("\(kind.title), \(model.value(for: kind))")
         }
     }
 
-    private var selectorKinds: [PhonePlaybackSelectorKind] {
-        var kinds: [PhonePlaybackSelectorKind] = []
-        if shouldShowEditionSelector {
-            kinds.append(.edition)
-        }
-        if shouldShowVersionValue {
-            kinds.append(.version)
-        }
-        if shouldShowAudioValue {
-            kinds.append(.audio)
-        }
-        if shouldShowSubtitleValue {
-            kinds.append(.subtitles)
-        }
-        return kinds
-    }
-
-    private var shouldShowEditionSelector: Bool {
-        editions.count > 1
-    }
-
-    private var shouldShowVersionValue: Bool {
-        currentVersion != nil
-    }
-
-    private var shouldEnableVersionSelector: Bool {
-        DetailPlaybackFormatting.shouldEnableVersionSelector(
-            versions: versions,
-            currentVersion: currentVersion
-        )
-    }
-
-    private var shouldShowAudioValue: Bool {
-        DetailPlaybackFormatting.shouldShowAudioValue(version: currentVersion)
-    }
-
-    private var shouldEnableAudioSelector: Bool {
-        DetailPlaybackFormatting.shouldEnableAudioSelector(version: currentVersion)
-    }
-
-    private var shouldShowSubtitleValue: Bool {
-        DetailPlaybackFormatting.shouldShowSubtitleValue(version: currentVersion)
-    }
-
-    private var shouldEnableSubtitleSelector: Bool {
-        DetailPlaybackFormatting.shouldEnableSubtitleSelector(version: currentVersion)
-    }
-
-    private func isInteractive(_ kind: PhonePlaybackSelectorKind) -> Bool {
-        switch kind {
-        case .edition:
-            return shouldShowEditionSelector
-        case .version:
-            return shouldEnableVersionSelector
-        case .audio:
-            return shouldEnableAudioSelector
-        case .subtitles:
-            return shouldEnableSubtitleSelector
-        }
-    }
-
-    private func value(for kind: PhonePlaybackSelectorKind) -> String {
-        switch kind {
-        case .edition:
-            return DetailPlaybackFormatting.currentEdition(
-                versions: versions,
-                currentVersion: currentVersion
-            )?.label ?? currentVersion?.editionDisplayLabel ?? "Standard"
-        case .version:
-            return DetailPlaybackFormatting.versionShortLabel(currentVersion)
-        case .audio:
-            return DetailPlaybackFormatting.audioValueLabel(
-                version: currentVersion,
-                selectedAudioTrackIndex: selectedAudioTrackIndex
-            )
-        case .subtitles:
-            return DetailPlaybackFormatting.subtitleValueLabel(
-                version: currentVersion,
-                selectedSubtitleTrackIndex: selectedSubtitleTrackIndex
-            )
-        }
-    }
 }
-private struct PhonePlaybackSelectorSheet: View {
+private struct PlaybackSelectorSheet: View {
     /// One entry when opened from a single control, all of them when opened
     /// from the `.summary` row.
-    let kinds: [PhonePlaybackSelectorKind]
+    let kinds: [PlaybackSelectorKind]
     let versions: [FileVersion]
     let currentVersion: FileVersion?
     let selectedVersionFileId: Int?
     let selectedAudioTrackIndex: Int?
     let selectedSubtitleTrackIndex: Int?
     let usesPopoverLayout: Bool
+
+    /// Wide enough for a two-line option row without wrapping its detail,
+    /// tall enough for a full audio-track list before it scrolls.
+    private static let popoverSize = CGSize(width: 440, height: 480)
     let onSelectVersion: (Int?) -> Void
     let onSelectAudioTrack: (Int?) -> Void
     let onSelectSubtitleTrack: (Int?) -> Void
@@ -270,14 +171,13 @@ private struct PhonePlaybackSelectorSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var preferredSubtitleLanguage: String?
 
-    private var editions: [PlaybackEditions.Edition] {
-        PlaybackEditions.editions(from: versions)
-    }
-
-    private var currentEdition: PlaybackEditions.Edition? {
-        DetailPlaybackFormatting.currentEdition(
+    private var model: PlaybackSelectorModel {
+        PlaybackSelectorModel(
             versions: versions,
-            currentVersion: currentVersion
+            currentVersion: currentVersion,
+            selectedVersionFileId: selectedVersionFileId,
+            selectedAudioTrackIndex: selectedAudioTrackIndex,
+            selectedSubtitleTrackIndex: selectedSubtitleTrackIndex
         )
     }
 
@@ -316,11 +216,13 @@ private struct PhonePlaybackSelectorSheet: View {
             }
         }
         #if os(iOS)
-        // Regular-width iPad uses this view as an anchored popover instead
-        // of forcing a phone detent into the split-view detail column.
+        // Regular-width iPad anchors this as a popover instead of forcing a
+        // phone detent into the split-view detail column. A popover sizes to
+        // its content, and a `List` has no natural bound, so the anchored
+        // presentation is the one case that needs an explicit size.
         .frame(
-            width: usesPopoverLayout ? 440 : nil,
-            height: usesPopoverLayout ? 480 : nil
+            width: usesPopoverLayout ? Self.popoverSize.width : nil,
+            height: usesPopoverLayout ? Self.popoverSize.height : nil
         )
         .presentationCompactAdaptation(.sheet)
         #endif
@@ -352,7 +254,7 @@ private struct PhonePlaybackSelectorSheet: View {
     /// Section headers only earn their space when the sheet holds more than
     /// one selector; a single-selector sheet already says so in its title.
     @ViewBuilder
-    private func sectionHeader(_ kind: PhonePlaybackSelectorKind) -> some View {
+    private func sectionHeader(_ kind: PlaybackSelectorKind) -> some View {
         if kinds.count > 1 {
             Text(kind.title)
         }
@@ -361,22 +263,16 @@ private struct PhonePlaybackSelectorSheet: View {
     @ViewBuilder
     private var editionOptions: some View {
         Section {
-            if editions.isEmpty {
+            if model.editions.isEmpty {
                 optionButton(title: "Standard", detail: nil, isSelected: true, isEnabled: false) {}
             } else {
-                ForEach(editions) { edition in
+                ForEach(model.editions) { edition in
                     optionButton(
                         title: edition.label,
                         detail: "\(edition.versions.count) version\(edition.versions.count == 1 ? "" : "s")",
-                        isSelected: currentEdition?.id == edition.id
+                        isSelected: model.currentEdition?.id == edition.id
                     ) {
-                        let best = DetailVersionSelection.displayVersion(
-                            versions: edition.versions,
-                            selectedFileId: nil,
-                            lastFileId: nil,
-                            preferredQualityId: PlayerSettings.shared.preferredQuality
-                        )
-                        onSelectVersion(best?.fileId)
+                        onSelectVersion(model.bestVersion(in: edition)?.fileId)
                         dismiss()
                     }
                 }
@@ -397,7 +293,7 @@ private struct PhonePlaybackSelectorSheet: View {
                 onSelectVersion(nil)
                 dismiss()
             }
-            ForEach(scopedVersions) { version in
+            ForEach(model.scopedVersions) { version in
                 optionButton(
                     title: DetailPlaybackFormatting.versionPrimaryText(version),
                     detail: DetailPlaybackFormatting.versionSecondaryText(version),
@@ -412,12 +308,6 @@ private struct PhonePlaybackSelectorSheet: View {
         }
     }
 
-    private var scopedVersions: [FileVersion] {
-        DetailPlaybackFormatting.versionSelectorVersions(
-            versions: versions,
-            currentVersion: currentVersion
-        )
-    }
 
     @ViewBuilder
     private var audioOptions: some View {

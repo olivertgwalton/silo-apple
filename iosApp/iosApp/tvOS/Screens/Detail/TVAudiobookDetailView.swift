@@ -304,7 +304,7 @@ struct TVAudiobookDetailView: View {
 
     private var actionRow: some View {
         HStack(spacing: 24) {
-            TVPrimaryPillButton(
+            DetailPillButton(
                 icon: model.primaryIcon,
                 title: model.primaryLabel
             ) {
@@ -314,13 +314,13 @@ struct TVAudiobookDetailView: View {
             .onAppear(perform: claimInitialActionFocus)
 
             if model.showsChapters {
-                TVSecondaryPillButton(icon: "list.bullet", title: "Chapters") {
+                DetailPillButton(icon: "list.bullet", title: "Chapters") {
                     showChapters = true
                 }
                 .focused($focusedAction, equals: .chapters)
             }
 
-            TVSecondaryPillButton(icon: "arrow.counterclockwise", title: "Start Over") {
+            DetailPillButton(icon: "arrow.counterclockwise", title: "Start Over") {
                 audioStore.play(contentId: detail.contentId, restart: true)
             }
             .focused($focusedAction, equals: .startOver)

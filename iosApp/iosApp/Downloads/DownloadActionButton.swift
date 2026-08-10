@@ -408,7 +408,7 @@ struct DownloadActionButton: View {
         }
     }
 
-    /// Glyph over caption, sized to match `PhoneLabeledAction` exactly so
+    /// Glyph over caption, sized to match `DetailLabeledAction` exactly so
     /// the two sit on one baseline in the refined action row.
     private func labeledGlyph<Glyph: View>(
         tint: Color,

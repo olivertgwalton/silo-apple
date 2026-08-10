@@ -1,10 +1,10 @@
-#if !os(tvOS)
 import Foundation
 
-/// Shared display formatting for the compact episode rail and expanded iPad
-/// rows. Keeping these labels in one seam prevents the two adaptive layouts
-/// from drifting as metadata rules evolve.
-enum PhoneEpisodeFormatting {
+/// Shared display formatting for every episode presentation — the compact
+/// rail, the expanded iPad rows, and the 10-foot tvOS cards. Keeping these
+/// labels in one seam prevents the layouts from drifting as metadata rules
+/// evolve.
+enum EpisodeFormatting {
     static func title(for episode: EpisodeListItem) -> String {
         episode.title ?? "Episode \(episode.episodeNumber)"
     }
@@ -14,7 +14,11 @@ enum PhoneEpisodeFormatting {
     }
 
     static func compactNumberLabel(for episode: EpisodeListItem) -> String {
-        String(format: "S%02dE%02d", episode.seasonNumber, episode.episodeNumber)
+        EpisodeCode.format(
+            season: episode.seasonNumber,
+            episode: episode.episodeNumber,
+            style: .padded
+        )
     }
 
     static func metadataLine(for episode: EpisodeListItem) -> String? {
@@ -22,8 +26,8 @@ enum PhoneEpisodeFormatting {
         if let airDate = DetailDateFormatting.abbreviatedDate(episode.airDate) {
             parts.append(airDate)
         }
-        if let runtime = episode.runtime, runtime > 0 {
-            parts.append(formatRuntime(runtime))
+        if let runtime = PlayerTimeFormatter.formatRuntime(minutes: episode.runtime) {
+            parts.append(runtime)
         }
         return parts.isEmpty ? nil : parts.joined(separator: "  ·  ")
     }
@@ -53,11 +57,4 @@ enum PhoneEpisodeFormatting {
         )
     }
 
-    private static func formatRuntime(_ minutes: Int) -> String {
-        if minutes >= 60 {
-            return "\(minutes / 60)h \(minutes % 60)m"
-        }
-        return "\(minutes)m"
-    }
 }
-#endif

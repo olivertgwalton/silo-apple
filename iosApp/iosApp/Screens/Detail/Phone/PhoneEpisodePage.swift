@@ -32,7 +32,7 @@ struct PhoneEpisodePage: View {
                     currentContentId: currentContentId
                 )
             } else {
-                PhoneEpisodeRail(
+                EpisodeRail(
                     episodes: episodes,
                     onSelect: onSelect,
                     currentContentId: currentContentId

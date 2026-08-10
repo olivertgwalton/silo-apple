@@ -8,15 +8,10 @@ struct PhoneSeasonEpisodeBrowser: View {
     let seasons: [Season]
     let selectedSeason: Season?
     let episodes: [EpisodeListItem]
-    let episodesBySeason: [Int: [EpisodeListItem]]
     let isLoadingEpisodes: Bool
     let onSelectSeason: (Season) -> Void
     let onSelectEpisode: (String) -> Void
     var currentContentId: String? = nil
-    /// Series and episode pages browse seasons in place. A dedicated season
-    /// page instead navigates when a chip is picked, so horizontal paging is
-    /// intentionally disabled there to keep its hero identity coherent.
-    var allowsSeasonPaging = true
 
     @State private var availableWidth: CGFloat = 0
 
@@ -31,24 +26,12 @@ struct PhoneSeasonEpisodeBrowser: View {
                episodes.isEmpty,
                !isLoadingEpisodes {
                 EmptyView()
-            } else if usesExpandedList, allowsSeasonPaging, seasons.count > 1 {
-                PhoneSeasonEpisodePager(
-                    seasons: seasons,
-                    selectedSeason: selectedSeason,
-                    episodes: episodes,
-                    episodesBySeason: episodesBySeason,
-                    isLoadingEpisodes: isLoadingEpisodes,
-                    onSelectSeason: onSelectSeason,
-                    onSelectEpisode: onSelectEpisode,
-                    currentContentId: currentContentId,
-                    availableWidth: availableWidth
-                )
             } else {
                 VStack(alignment: .leading, spacing: 14) {
                     if seasons.count > 1 {
-                        PhoneSeasonChips(
+                        SeasonChipRow(
                             seasons: seasons,
-                            selected: selectedSeason,
+                            selectedSeasonId: selectedSeason?.id,
                             onSelect: onSelectSeason
                         )
                     }

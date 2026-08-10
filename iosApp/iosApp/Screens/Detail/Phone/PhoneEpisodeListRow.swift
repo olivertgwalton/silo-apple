@@ -24,7 +24,7 @@ struct PhoneEpisodeListRow: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(
-            PhoneEpisodeFormatting.accessibilityDescription(
+            EpisodeFormatting.accessibilityDescription(
                 for: episode,
                 isCurrent: isCurrent
             )
@@ -69,7 +69,7 @@ struct PhoneEpisodeListRow: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             }
 
-            if let progress = PhoneEpisodeFormatting.progressFraction(for: episode) {
+            if let progress = EpisodeFormatting.progressFraction(for: episode) {
                 progressBar(fraction: progress)
             }
         }
@@ -84,11 +84,11 @@ struct PhoneEpisodeListRow: View {
     private var metadata: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
-                Text(PhoneEpisodeFormatting.compactNumberLabel(for: episode))
+                Text(EpisodeFormatting.compactNumberLabel(for: episode))
                     .font(.caption.bold())
                     .foregroundStyle(.secondary)
 
-                if let metadataLine = PhoneEpisodeFormatting.metadataLine(for: episode) {
+                if let metadataLine = EpisodeFormatting.metadataLine(for: episode) {
                     Text(metadataLine)
                         .font(.caption)
                         .foregroundStyle(.tertiary)
@@ -96,7 +96,7 @@ struct PhoneEpisodeListRow: View {
                 }
             }
 
-            Text(PhoneEpisodeFormatting.title(for: episode))
+            Text(EpisodeFormatting.title(for: episode))
                 .font(.headline)
                 .foregroundStyle(Color.continuumOnSurface)
                 .lineLimit(1)

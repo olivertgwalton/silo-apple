@@ -1,6 +1,50 @@
 #if !os(tvOS)
 import SwiftUI
 
+/// The layout constants this hero's two compositions are built from.
+/// Named rather than inline so the relationships between them — the width
+/// at which the poster earns its place, the width above which the columns
+/// breathe — are readable without measuring the view.
+private enum HeroLayout {
+    /// Container width at which poster + left-aligned column beats the
+    /// phone's backdrop-over-centered-column stack.
+    static let expandedBreakpoint: CGFloat = 640
+    /// Above this the expanded hero has room for wider gutters.
+    static let roomyBreakpoint: CGFloat = 840
+
+    static let backdropHeightCompact: CGFloat = 360
+    static let backdropHeightRegular: CGFloat = 420
+
+    /// Logo art arrives with generous internal padding, so a taller box
+    /// lets a wordmark claim a third of the column and push Play toward
+    /// the fold. These keep the logo dominant without crowding the
+    /// actions it exists to introduce.
+    static let logoHeightCompact: CGFloat = 132
+    static let logoHeightRegular: CGFloat = 168
+    static let logoHeightExpanded: CGFloat = 144
+    /// Logo width in the expanded column, clamped so a wide wordmark
+    /// can't crowd the poster and a narrow one still reads as title art.
+    static let expandedLogoWidthRange: ClosedRange<CGFloat> = 220...360
+
+    static let editorialMaxWidth: CGFloat = 620
+    static let expandedMinHeight: CGFloat = 560
+    /// Clears the navigation bar over the expanded backdrop.
+    static let expandedTopPadding: CGFloat = 92
+    /// The page adds its own hero-to-section spacing; a smaller inset here
+    /// keeps the first detail section within reach on iPad.
+    static let expandedBottomPadding: CGFloat = 24
+
+    static let horizontalPaddingRoomy: CGFloat = 48
+    static let horizontalPaddingTight: CGFloat = 32
+    static let columnSpacingRoomy: CGFloat = 36
+    static let columnSpacingTight: CGFloat = 28
+
+    /// Poster takes a quarter of the container, floored so it stays
+    /// recognizable and capped so it never dominates the column.
+    static let posterWidthFraction: CGFloat = 0.25
+    static let posterWidthRange: ClosedRange<CGFloat> = 164...224
+}
+
 /// Adaptive iOS detail hero. Compact containers retain the phone's
 /// backdrop-first, centered editorial composition. At regular iPad detail
 /// widths, poster art and a left-aligned editorial column share a single
@@ -30,10 +74,10 @@ struct PhoneDetailHero<Actions: View, BelowOverview: View>: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var availableWidth: CGFloat = 0
 
-    private let expandedLayoutBreakpoint: CGFloat = 640
-
     private var backdropHeight: CGFloat {
-        horizontalSizeClass == .regular ? 420 : 360
+        horizontalSizeClass == .regular
+            ? HeroLayout.backdropHeightRegular
+            : HeroLayout.backdropHeightCompact
     }
 
     var body: some View {
@@ -54,7 +98,7 @@ struct PhoneDetailHero<Actions: View, BelowOverview: View>: View {
 
     private var usesExpandedLayout: Bool {
         if availableWidth > 0 {
-            return availableWidth >= expandedLayoutBreakpoint
+            return availableWidth >= HeroLayout.expandedBreakpoint
         }
         return horizontalSizeClass == .regular
     }
@@ -85,19 +129,16 @@ struct PhoneDetailHero<Actions: View, BelowOverview: View>: View {
                 alignment: .leading,
                 textAlignment: .leading,
                 factsAlignment: .leading,
-                logoHeight: 144
+                logoHeight: HeroLayout.logoHeightExpanded
             )
-            .frame(maxWidth: 620, alignment: .leading)
+            .frame(maxWidth: HeroLayout.editorialMaxWidth, alignment: .leading)
 
             Spacer(minLength: 0)
         }
         .padding(.horizontal, expandedHorizontalPadding)
-        .padding(.top, 92)
-        // The page adds its own hero-to-section spacing. A smaller trailing
-        // inset keeps the first detail section within reach on iPad without
-        // changing the more generous compact-phone composition.
-        .padding(.bottom, 24)
-        .frame(maxWidth: .infinity, minHeight: 560, alignment: .topLeading)
+        .padding(.top, HeroLayout.expandedTopPadding)
+        .padding(.bottom, HeroLayout.expandedBottomPadding)
+        .frame(maxWidth: .infinity, minHeight: HeroLayout.expandedMinHeight, alignment: .topLeading)
         .background {
             expandedBackdrop
         }
@@ -162,15 +203,20 @@ struct PhoneDetailHero<Actions: View, BelowOverview: View>: View {
     }
 
     private var expandedHorizontalPadding: CGFloat {
-        availableWidth >= 840 ? 48 : 32
+        availableWidth >= HeroLayout.roomyBreakpoint
+            ? HeroLayout.horizontalPaddingRoomy
+            : HeroLayout.horizontalPaddingTight
     }
 
     private var expandedColumnSpacing: CGFloat {
-        availableWidth >= 840 ? 36 : 28
+        availableWidth >= HeroLayout.roomyBreakpoint
+            ? HeroLayout.columnSpacingRoomy
+            : HeroLayout.columnSpacingTight
     }
 
     private var posterWidth: CGFloat {
-        min(max(availableWidth * 0.25, 164), 224)
+        (availableWidth * HeroLayout.posterWidthFraction)
+            .clamped(to: HeroLayout.posterWidthRange)
     }
 
     private var posterHeight: CGFloat {
@@ -236,7 +282,7 @@ struct PhoneDetailHero<Actions: View, BelowOverview: View>: View {
     ) -> some View {
         VStack(alignment: alignment, spacing: 14) {
             if let eyebrow, !eyebrow.isEmpty {
-                PhoneHeroEyebrow(text: eyebrow)
+                HeroEyebrow(text: eyebrow)
             }
             titleBlock(textAlignment: textAlignment, logoHeight: logoHeight)
             sourceRow(textAlignment: textAlignment)
@@ -252,7 +298,7 @@ struct PhoneDetailHero<Actions: View, BelowOverview: View>: View {
     @ViewBuilder
     private func titleBlock(textAlignment: TextAlignment, logoHeight: CGFloat) -> some View {
         if let episodeSeriesTitle {
-            PhoneEpisodeHierarchyTitle(
+            HeroEpisodeHierarchyTitle(
                 seriesTitle: episodeSeriesTitle,
                 episodeTitle: title,
                 textAlignment: textAlignment
@@ -266,7 +312,7 @@ struct PhoneDetailHero<Actions: View, BelowOverview: View>: View {
                 .frame(maxWidth: .infinity, alignment: frameAlignment(for: textAlignment))
                 .accessibilityLabel(title)
         } else {
-            PhoneHeroTitle(title: title, textAlignment: textAlignment)
+            HeroTitle(title: title, textAlignment: textAlignment)
         }
     }
 
@@ -277,46 +323,20 @@ struct PhoneDetailHero<Actions: View, BelowOverview: View>: View {
         return trimmed
     }
 
-    /// Hero logo height. Deliberately smaller than Apple TV's treatment:
-    /// title art already arrives with generous internal padding, so at 160 a
-    /// wordmark like "SCARY MOVIE" claimed a third of the editorial column
-    /// and pushed Play toward the fold. This keeps the logo dominant without
-    /// crowding out the actions it exists to introduce.
     private var compactLogoHeight: CGFloat {
-        horizontalSizeClass == .regular ? 168 : 132
+        horizontalSizeClass == .regular
+            ? HeroLayout.logoHeightRegular
+            : HeroLayout.logoHeightCompact
     }
 
     @ViewBuilder
     private func sourceRow(textAlignment: TextAlignment) -> some View {
         if !sourceTokens.isEmpty || ratingChip != nil {
-            HStack(spacing: 8) {
-                ForEach(Array(sourceTokens.enumerated()), id: \.offset) { index, token in
-                    if index > 0 {
-                        Text("·")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.continuumOnSurface.opacity(0.4))
-                    }
-                    Text(token)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.continuumOnSurface.opacity(0.85))
-                        .lineLimit(1)
-                }
-                if let ratingChip, !ratingChip.isEmpty {
-                    Text(ratingChip)
-                        .font(.system(size: 11, weight: .heavy))
-                        .tracking(0.8)
-                        .foregroundColor(.continuumOnSurface)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 2)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 3)
-                                .stroke(Color.continuumOnSurface.opacity(0.55), lineWidth: 1)
-                        )
-                        .padding(.leading, 2)
-                }
-            }
-            .multilineTextAlignment(textAlignment)
-            .frame(maxWidth: .infinity, alignment: frameAlignment(for: textAlignment))
+            HeroSourceRow(
+                tokens: sourceTokens,
+                ratingChip: ratingChip,
+                textAlignment: textAlignment
+            )
         }
     }
 
@@ -325,7 +345,7 @@ struct PhoneDetailHero<Actions: View, BelowOverview: View>: View {
             - (expandedHorizontalPadding * 2)
             - posterWidth
             - expandedColumnSpacing
-        return min(max(editorialWidth, 220), 360)
+        return editorialWidth.clamped(to: HeroLayout.expandedLogoWidthRange)
     }
 
     private func frameAlignment(for textAlignment: TextAlignment) -> Alignment {
@@ -347,210 +367,10 @@ struct PhoneDetailHero<Actions: View, BelowOverview: View>: View {
     @ViewBuilder
     private func factsRow(alignment: HorizontalAlignment) -> some View {
         if !factsLine.isEmpty {
-            FlowingFactsRow(tokens: factsLine, alignment: alignment)
+            HeroFactsRow(tokens: factsLine, alignment: alignment)
                 .padding(.top, 4)
         }
     }
 }
 
-// MARK: - Title
-
-private struct PhoneHeroTitle: View {
-    let title: String
-    let textAlignment: TextAlignment
-
-    var body: some View {
-        let parts = DetailHeroMetadata.splitTitle(title)
-        VStack(spacing: 4) {
-            Text(parts.primary)
-                .font(.system(size: 30, weight: .heavy))
-                .foregroundColor(.continuumOnSurface)
-                .lineLimit(2)
-                .multilineTextAlignment(textAlignment)
-                .fixedSize(horizontal: false, vertical: true)
-            if let subtitle = parts.subtitle {
-                Text(subtitle.uppercased())
-                    .font(.system(size: 13, weight: .heavy))
-                    .tracking(1.2)
-                    .foregroundColor(.continuumOnSurface.opacity(0.8))
-                    .lineLimit(2)
-                    .multilineTextAlignment(textAlignment)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .frame(
-            maxWidth: .infinity,
-            alignment: textAlignment == .leading ? .leading : .center
-        )
-    }
-}
-
-private struct PhoneEpisodeHierarchyTitle: View {
-    let seriesTitle: String
-    let episodeTitle: String
-    let textAlignment: TextAlignment
-
-    var body: some View {
-        let parts = DetailHeroMetadata.splitTitle(episodeTitle)
-        VStack(spacing: 6) {
-            Text(seriesTitle)
-                .font(.system(size: 34, weight: .heavy))
-                .foregroundColor(.continuumOnSurface)
-                .lineLimit(2)
-                .multilineTextAlignment(textAlignment)
-                .fixedSize(horizontal: false, vertical: true)
-            Text(parts.primary)
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundColor(.continuumOnSurface.opacity(0.9))
-                .lineLimit(2)
-                .multilineTextAlignment(textAlignment)
-                .fixedSize(horizontal: false, vertical: true)
-            if let subtitle = parts.subtitle {
-                Text(subtitle.uppercased())
-                    .font(.system(size: 13, weight: .heavy))
-                    .tracking(1.0)
-                    .foregroundColor(.continuumOnSurface.opacity(0.76))
-                    .lineLimit(2)
-                    .multilineTextAlignment(textAlignment)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .frame(
-            maxWidth: .infinity,
-            alignment: textAlignment == .leading ? .leading : .center
-        )
-    }
-}
-
-// MARK: - Eyebrow
-
-private struct PhoneHeroEyebrow: View {
-    let text: String
-
-    var body: some View {
-        Text(text)
-            .font(.system(size: 12, weight: .semibold))
-            .tracking(0.6)
-            .foregroundColor(.continuumOnSurface)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 5)
-            .background(
-                Capsule()
-                    .fill(Color.continuumSurfaceElevated)
-            )
-    }
-}
-
-// MARK: - Facts row (wraps when needed)
-
-/// Centered facts row that line-wraps when the tokens exceed the
-/// container width. SwiftUI's plain HStack truncates instead of
-/// wrapping, so we lean on `Layout` to flow the chips like Apple's
-/// quality-badge row beneath the overview.
-private struct FlowingFactsRow: View {
-    let tokens: [DetailHeroFactToken]
-    let alignment: HorizontalAlignment
-
-    var body: some View {
-        PhoneFactsFlowLayout(spacing: 8, lineSpacing: 6, alignment: alignment) {
-            ForEach(Array(tokens.enumerated()), id: \.offset) { index, token in
-                if index > 0,
-                   case .text = token,
-                   case .text = tokens[index - 1] {
-                    Text("·")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.continuumOnSurface.opacity(0.4))
-                }
-                factsItem(token)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func factsItem(_ token: DetailHeroFactToken) -> some View {
-        switch token {
-        case .text(let value):
-            Text(value)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(.continuumOnSurface.opacity(0.78))
-        case .rating(let value):
-            HStack(spacing: 4) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.continuumSuccess.opacity(0.9))
-                Text(value)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.continuumOnSurface.opacity(0.78))
-            }
-        case .chip(let value):
-            Text(value)
-                .font(.system(size: 10, weight: .heavy))
-                .tracking(0.8)
-                .foregroundColor(.continuumOnSurface)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 3)
-                        .stroke(Color.continuumOnSurface.opacity(0.45), lineWidth: 1)
-                )
-        }
-    }
-}
-
-/// Minimal flow layout that wraps subviews onto new lines when the
-/// proposed width can't fit them. Uses each subview's intrinsic
-/// width — no shrinking — so every chip stays at its natural size.
-private struct PhoneFactsFlowLayout: Layout {
-    var spacing: CGFloat
-    var lineSpacing: CGFloat
-    var alignment: HorizontalAlignment
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let maxWidth = proposal.width ?? .infinity
-        let lines = layoutLines(maxWidth: maxWidth, subviews: subviews)
-        let height = lines.reduce(0) { acc, line in acc + line.height + lineSpacing } - lineSpacing
-        let width = lines.map(\.width).max() ?? 0
-        return CGSize(width: min(width, maxWidth), height: max(0, height))
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let maxWidth = bounds.width
-        let lines = layoutLines(maxWidth: maxWidth, subviews: subviews)
-        var y = bounds.minY
-        for line in lines {
-            let extra = max(0, maxWidth - line.width)
-            var x = bounds.minX + (alignment == .center ? extra / 2 : 0)
-            for entry in line.entries {
-                entry.subview.place(
-                    at: CGPoint(x: x, y: y),
-                    anchor: .topLeading,
-                    proposal: ProposedViewSize(width: entry.size.width, height: entry.size.height)
-                )
-                x += entry.size.width + spacing
-            }
-            y += line.height + lineSpacing
-        }
-    }
-
-    private struct Entry { let subview: LayoutSubview; let size: CGSize }
-    private struct Line { var entries: [Entry] = []; var width: CGFloat = 0; var height: CGFloat = 0 }
-
-    private func layoutLines(maxWidth: CGFloat, subviews: Subviews) -> [Line] {
-        var lines: [Line] = [Line()]
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            let candidateWidth = lines[lines.count - 1].width
-                + (lines[lines.count - 1].entries.isEmpty ? 0 : spacing)
-                + size.width
-            if candidateWidth > maxWidth, !lines[lines.count - 1].entries.isEmpty {
-                lines.append(Line())
-            }
-            let isFirst = lines[lines.count - 1].entries.isEmpty
-            lines[lines.count - 1].entries.append(Entry(subview: subview, size: size))
-            lines[lines.count - 1].width += (isFirst ? 0 : spacing) + size.width
-            lines[lines.count - 1].height = max(lines[lines.count - 1].height, size.height)
-        }
-        return lines
-    }
-}
 #endif

@@ -249,7 +249,7 @@ struct PlayerNextUpScreen<MiniPlayer: View>: View {
                         }
                         .frame(width: 220)
                     }
-                    .buttonStyle(TVPillButtonStyle(kind: .primary))
+                    .buttonStyle(DetailPillButtonStyle(kind: .primary, prominence: .prominent))
                     .focused($focusedTarget, equals: .playNow)
                     .prefersDefaultFocus(true, in: defaultFocusNamespace)
                 }
@@ -272,7 +272,7 @@ struct PlayerNextUpScreen<MiniPlayer: View>: View {
                         }
                         .frame(width: 250)
                     }
-                    .buttonStyle(TVPillButtonStyle(kind: .secondary))
+                    .buttonStyle(DetailPillButtonStyle(kind: .secondary, prominence: .prominent))
                     .focused($focusedTarget, equals: .keepWatching)
                     .prefersDefaultFocus(!hasNextEpisode, in: defaultFocusNamespace)
                 }
@@ -288,7 +288,7 @@ struct PlayerNextUpScreen<MiniPlayer: View>: View {
                     }
                     .frame(width: 120)
                 }
-                .buttonStyle(TVPillButtonStyle(kind: .secondary))
+                .buttonStyle(DetailPillButtonStyle(kind: .secondary, prominence: .prominent))
                 .focused($focusedTarget, equals: .back)
                 .prefersDefaultFocus(!hasNextEpisode && viewModel.nextUpScreenVideoEnded, in: defaultFocusNamespace)
             }
@@ -447,7 +447,7 @@ struct PlayerNextUpScreen<MiniPlayer: View>: View {
             parts.append(formatAirDate(airDate))
         }
         if let runtime = episode.runtime, runtime > 0 {
-            parts.append(formatRuntime(runtime))
+            parts.append(PlayerTimeFormatter.formatRuntime(Double(runtime) * 60))
         }
         return parts.joined(separator: " · ")
     }
@@ -457,10 +457,6 @@ struct PlayerNextUpScreen<MiniPlayer: View>: View {
         return date.formatted(date: .abbreviated, time: .omitted)
     }
 
-    private func formatRuntime(_ minutes: Int) -> String {
-        Duration.seconds(minutes * 60)
-            .formatted(.units(allowed: [.hours, .minutes], width: .abbreviated))
-    }
 
     private func mainContentWidth(for proxy: GeometryProxy) -> CGFloat {
         min(proxy.size.width - horizontalPadding * 2, isTV ? 1420 : 680)

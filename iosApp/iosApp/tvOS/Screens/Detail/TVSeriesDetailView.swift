@@ -166,7 +166,7 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
             if let trailerFetchStatus {
                 // Non-focusable readout, so it adds no stop to the action
                 // column's focus traversal.
-                TVTrailerStatusPill(
+                TrailerStatusPill(
                     message: trailerFetchStatus,
                     isFetching: isFetchingTrailers,
                     onAutoDismiss: onTrailerStatusShown
@@ -182,7 +182,7 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
     private var actionRow: some View {
         HStack(spacing: 36) {
             if let nextUp = nextUpEpisode {
-                TVPrimaryPillButton(
+                DetailPillButton(
                     icon: "play.fill",
                     title: playButtonLabel(for: nextUp),
                     action: { onPlayEpisode(nextUp.contentId, selectedFileId(for: nextUp), false) },
@@ -195,7 +195,7 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
                     resetInitialPlayFocus()
                 }
                 if nextUp.userData?.isInProgress == true {
-                    TVSecondaryPillButton(
+                    DetailPillButton(
                         icon: "backward.end.fill",
                         title: "Start Over",
                         action: { onPlayEpisode(nextUp.contentId, selectedFileId(for: nextUp), true) }
@@ -203,7 +203,7 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
                 }
             }
 
-            TVCircleActionButton(
+            DetailCircleActionButton(
                 icon: "heart",
                 iconActive: "heart.fill",
                 isActive: isFavorite,
@@ -211,7 +211,7 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
                 action: onToggleFavorite
             )
 
-            TVCircleActionButton(
+            DetailCircleActionButton(
                 icon: "bookmark",
                 iconActive: "bookmark.fill",
                 isActive: inWatchlist,
@@ -219,7 +219,7 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
                 action: onToggleWatchlist
             )
 
-            TVCircleActionButton(
+            DetailCircleActionButton(
                 icon: "checkmark.circle",
                 iconActive: "checkmark.circle.fill",
                 isActive: isWatched,
@@ -250,7 +250,9 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
     /// `.focusSection()`, so it needs no focus work of its own.
     @ViewBuilder
     private var moreMenu: some View {
-        TVCircleMenuButton(accessibilityLabel: "More options") {
+        DetailCircleMenuButton(
+            accessibilityLabel: "More options"
+        ) {
             Button(action: onFindTrailers) {
                 Label("Find Trailers", systemImage: "film.stack")
             }
@@ -342,7 +344,7 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
     }
 
     private var seasonRow: some View {
-        TVSeasonChipRow(
+        SeasonChipRow(
             seasons: seasons,
             selectedSeasonId: selectedSeason?.id,
             onSelect: onSelectSeason
@@ -367,7 +369,7 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
                 .font(.continuumCaption)
                 .foregroundColor(.continuumSecondaryText)
         } else {
-            TVEpisodeRail(
+            EpisodeRail(
                 episodes: episodes,
                 onSelect: onEpisodeTap,
                 onSetWatched: onSetEpisodeWatched,
@@ -397,7 +399,10 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
     private var trailersSection: some View {
         // Header lives inside the rail so it disappears with the cards when
         // the item has neither remote videos nor local extras.
-        TVTrailersRail(entries: trailerEntries, onSelect: onSelectTrailer)
+        TrailersRail(
+            entries: trailerEntries,
+            onSelect: onSelectTrailer
+        )
     }
 
     // MARK: - Cast
@@ -415,7 +420,7 @@ struct TVSeriesDetailView<BelowSynopsis: View>: View {
     private var detailsSection: some View {
         VStack(alignment: .leading, spacing: 28) {
             DetailSectionHeader(title: "Details")
-            DetailFactsSection(detail: detail, metrics: .television)
+            DetailFactsSection(detail: detail)
         }
     }
 

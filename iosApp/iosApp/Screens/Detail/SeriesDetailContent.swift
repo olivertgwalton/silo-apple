@@ -15,7 +15,6 @@ struct SeriesDetailContent<BelowOverview: View>: View {
     let seasons: [Season]
     let selectedSeason: Season?
     let episodes: [EpisodeListItem]
-    let episodesBySeason: [Int: [EpisodeListItem]]
     let isLoadingEpisodes: Bool
     let selectedNextUpFileId: Int?
     let selectedNextUpAudioTrackIndex: Int?
@@ -103,15 +102,15 @@ struct SeriesDetailContent<BelowOverview: View>: View {
     private var actionStack: some View {
         VStack(spacing: 16) {
             if let nextUp = nextUpEpisode {
-                PhoneRefinedPlayButton(
+                DetailLabeledPlayButton(
                     icon: "play.fill",
                     title: playButtonLabel(for: nextUp),
                     action: { handlePlayTap(for: nextUp) }
                 )
             }
 
-            PhoneLabeledActionRow {
-                PhoneLabeledAction(
+            DetailLabeledActionRow {
+                DetailLabeledAction(
                     icon: "heart",
                     iconActive: "heart.fill",
                     isActive: isFavorite,
@@ -120,7 +119,7 @@ struct SeriesDetailContent<BelowOverview: View>: View {
                         ? "Remove from Favorites" : "Add to Favorites",
                     action: onToggleFavorite
                 )
-                PhoneLabeledAction(
+                DetailLabeledAction(
                     icon: "bookmark",
                     iconActive: "bookmark.fill",
                     isActive: inWatchlist,
@@ -129,7 +128,7 @@ struct SeriesDetailContent<BelowOverview: View>: View {
                         ? "Remove from Watchlist" : "Add to Watchlist",
                     action: onToggleWatchlist
                 )
-                PhoneLabeledAction(
+                DetailLabeledAction(
                     icon: "checkmark.circle",
                     iconActive: "checkmark.circle.fill",
                     isActive: isWatched,
@@ -151,13 +150,13 @@ struct SeriesDetailContent<BelowOverview: View>: View {
                 }
                 // The series page has no other overflow entries today; the
                 // menu exists solely so the trailer fetch is reachable.
-                PhoneLabeledMenu(label: "More") {
+                DetailLabeledMenu(label: "More") {
                     overflowMenuItems
                 }
             }
 
             if let trailerStatusMessage {
-                PhoneTrailerStatusPill(
+                TrailerStatusPill(
                     message: trailerStatusMessage,
                     isFetching: isFindingTrailers,
                     onAutoDismiss: onTrailerStatusShown
@@ -182,7 +181,7 @@ struct SeriesDetailContent<BelowOverview: View>: View {
     }
 
     private func nextUpSelectors(for version: FileVersion) -> some View {
-        PhonePlaybackSelectorRow(
+        PlaybackSelectorRow(
             versions: nextUpVersions,
             currentVersion: version,
             selectedVersionFileId: selectedNextUpFileId,
@@ -292,7 +291,7 @@ struct SeriesDetailContent<BelowOverview: View>: View {
             allowRemote: true
         )
         if !entries.isEmpty {
-            PhoneTrailersSection(entries: entries, onPlayExtra: onPlayExtra)
+            TrailersSection(entries: entries, onPlayExtra: onPlayExtra)
         }
     }
 
@@ -311,7 +310,7 @@ struct SeriesDetailContent<BelowOverview: View>: View {
     private var episodesSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             DetailSectionHeader(
-                label: selectedSeason.map { "Season \($0.seasonNumber)" } ?? "Episodes",
+                label: selectedSeason.map { "Season \($0.seasonNumber)" },
                 title: "Episodes",
                 trailingText: episodeCountSubtitle
             )
@@ -321,7 +320,6 @@ struct SeriesDetailContent<BelowOverview: View>: View {
                 seasons: seasons,
                 selectedSeason: selectedSeason,
                 episodes: episodes,
-                episodesBySeason: episodesBySeason,
                 isLoadingEpisodes: isLoadingEpisodes,
                 onSelectSeason: onSelectSeason,
                 onSelectEpisode: onEpisodeTap

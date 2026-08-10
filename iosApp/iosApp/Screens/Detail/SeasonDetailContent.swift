@@ -17,7 +17,6 @@ struct SeasonDetailContent<BelowOverview: View>: View {
     let seasons: [Season]
     let selectedSeason: Season?
     let episodes: [EpisodeListItem]
-    let episodesBySeason: [Int: [EpisodeListItem]]
     let isLoadingEpisodes: Bool
     let selectedNextUpFileId: Int?
     let selectedNextUpAudioTrackIndex: Int?
@@ -94,7 +93,7 @@ struct SeasonDetailContent<BelowOverview: View>: View {
     private var actionStack: some View {
         VStack(spacing: 12) {
             if let nextUp = nextUpEpisode {
-                PhonePrimaryPillButton(
+                DetailPillButton(
                     icon: "play.fill",
                     title: playButtonLabel(for: nextUp),
                     action: { handlePlayTap(for: nextUp) },
@@ -103,7 +102,7 @@ struct SeasonDetailContent<BelowOverview: View>: View {
             }
             circleRow
             if nextUpEpisode != nil, let effectiveNextUpVersion {
-                PhonePlaybackSelectorRow(
+                PlaybackSelectorRow(
                     versions: nextUpVersions,
                     currentVersion: effectiveNextUpVersion,
                     selectedVersionFileId: selectedNextUpFileId,
@@ -128,7 +127,7 @@ struct SeasonDetailContent<BelowOverview: View>: View {
 
     private var circleRow: some View {
         HStack(spacing: 14) {
-            PhoneCircleActionButton(
+            DetailCircleActionButton(
                 icon: "heart",
                 iconActive: "heart.fill",
                 isActive: isFavorite,
@@ -136,7 +135,7 @@ struct SeasonDetailContent<BelowOverview: View>: View {
                 action: onToggleFavorite
             )
 
-            PhoneCircleActionButton(
+            DetailCircleActionButton(
                 icon: "bookmark",
                 iconActive: "bookmark.fill",
                 isActive: inWatchlist,
@@ -144,7 +143,7 @@ struct SeasonDetailContent<BelowOverview: View>: View {
                 action: onToggleWatchlist
             )
 
-            PhoneCircleActionButton(
+            DetailCircleActionButton(
                 icon: "checkmark.circle",
                 iconActive: "checkmark.circle.fill",
                 isActive: isWatched,
@@ -161,7 +160,7 @@ struct SeasonDetailContent<BelowOverview: View>: View {
             }
 
             if let seriesId = detail.seriesId {
-                PhoneCircleMenuButton(accessibilityLabel: "More options") {
+                DetailCircleMenuButton(accessibilityLabel: "More options") {
                     Button {
                         onNavigateToItem(seriesId)
                     } label: {
@@ -236,11 +235,9 @@ struct SeasonDetailContent<BelowOverview: View>: View {
                 seasons: seasons,
                 selectedSeason: selectedSeason,
                 episodes: episodes,
-                episodesBySeason: episodesBySeason,
                 isLoadingEpisodes: isLoadingEpisodes,
                 onSelectSeason: onSelectSeason,
-                onSelectEpisode: onEpisodeTap,
-                allowsSeasonPaging: false
+                onSelectEpisode: onEpisodeTap
             )
         }
     }

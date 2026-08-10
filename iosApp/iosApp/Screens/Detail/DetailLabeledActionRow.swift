@@ -11,7 +11,7 @@ import SwiftUI
 /// a row of naked, unlabelled circles floating underneath and a ragged grid of
 /// form fields below that. Trimmed to 50pt with a slightly quieter label, it
 /// anchors the stack instead of shouting over it.
-struct PhoneRefinedPlayButton: View {
+struct DetailLabeledPlayButton: View {
     let icon: String
     let title: String
     let action: () -> Void
@@ -43,7 +43,7 @@ struct PhoneRefinedPlayButton: View {
 /// nothing tying them to it. Five identical circles is a guessing game; a
 /// heart and a bookmark are not self-evidently different commitments. Naming
 /// them costs one line of 10pt text each and removes the guess entirely.
-struct PhoneLabeledAction: View {
+struct DetailLabeledAction: View {
     let icon: String
     var iconActive: String? = nil
     var isActive: Bool = false
@@ -90,8 +90,8 @@ struct PhoneLabeledAction: View {
     }
 }
 
-/// Menu-backed peer of `PhoneLabeledAction`, for the overflow entry.
-struct PhoneLabeledMenu<MenuContent: View>: View {
+/// Menu-backed peer of `DetailLabeledAction`, for the overflow entry.
+struct DetailLabeledMenu<MenuContent: View>: View {
     var icon: String = "ellipsis"
     let label: String
     @ViewBuilder let menu: () -> MenuContent
@@ -124,7 +124,7 @@ struct PhoneLabeledMenu<MenuContent: View>: View {
 /// Evenly distributes the named actions across the content width and rules
 /// them off from the overview below, so the cluster reads as one band of
 /// controls rather than loose ornaments.
-struct PhoneLabeledActionRow<Content: View>: View {
+struct DetailLabeledActionRow<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     var body: some View {

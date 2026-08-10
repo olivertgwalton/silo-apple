@@ -328,7 +328,7 @@ struct PersonDetailView: View {
         #if os(tvOS)
         TVPersonDetailContent(person: person, viewModel: viewModel)
         #else
-        PhonePersonDetailContent(person: person, viewModel: viewModel)
+        CompactPersonDetailContent(person: person, viewModel: viewModel)
             .refreshable {
                 async let overlayRefresh: Void = OverlayPrefsStore.shared.refresh()
                 await viewModel.reload()
@@ -469,7 +469,7 @@ private struct TVPersonDetailContent: View {
     }
 }
 #else
-private struct PhonePersonDetailContent: View {
+private struct CompactPersonDetailContent: View {
     let person: Person
     var viewModel: PersonDetailViewModel
 

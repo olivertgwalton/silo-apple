@@ -46,9 +46,6 @@ struct ContinuumTheme {
     static let cardCornerRadius: CGFloat = 14
     #endif
 
-    /// Pill-shaped elements — use Capsule() instead of a fixed radius
-    static let pillCornerRadius: CGFloat = 100
-
     // MARK: - Top Bar
 
     /// Tap-target frame for chrome-free top-bar icon buttons (Search / Cast).
@@ -114,18 +111,110 @@ struct ContinuumTheme {
     static let sectionHeaderSpacing: CGFloat = 4
     #endif
 
-    // MARK: - Elevation
+    // MARK: - Detail rails
+    //
+    // A landscape rail card is the one dimension the layout can't derive: a
+    // grid can fit `.adaptive` columns to its container, but a free-scrolling
+    // rail has no container width to divide. Everything else about these
+    // cards — type, corner radius, insets — comes from the tokens above.
+    // Matched across the episode and trailer rails so the two line up
+    // card-for-card on a page that shows both.
 
-    /// Card elevation — zero for Plezy-style flat cards
-    static let cardElevation: CGFloat = 0
+    #if os(tvOS)
+    /// Read from across a room: roughly three and a half cards per screen.
+    static let railCardWidth: CGFloat = 460
+    static let railCardSpacing: CGFloat = 36
+    #elseif os(macOS)
+    static let railCardWidth: CGFloat = 300
+    static let railCardSpacing: CGFloat = 18
+    #else
+    static let railCardWidth: CGFloat = 240
+    static let railCardSpacing: CGFloat = 14
+    #endif
+
+    // MARK: - Focus
+    //
+    // Focus appearance, not focus behaviour — `defaultFocus` is applied
+    // unconditionally and `focusGroup()` absorbs the one API that is
+    // tvOS/macOS-only. These tokens say how loud the focused state looks, and
+    // flatten to "no treatment" where a pointer or a finger is the input.
+
+    #if os(tvOS)
+    /// Focused cards lift, so their scroll views must not clip them.
+    static let cardsLiftOnFocus = true
+    static let focusScale: CGFloat = 1.04
+    static let focusRingWidth: CGFloat = 3
+    static let focusOutlineWidth: CGFloat = 3
+    static let focusOutlineInset: CGFloat = 5
+    static let cardRestingShadowRadius: CGFloat = 8
+    /// Icon-only action button — a comfortable Siri Remote target.
+    static let circleControlDiameter: CGFloat = 72
+    #elseif os(macOS)
+    static let cardsLiftOnFocus = false
+    static let focusScale: CGFloat = 1.0
+    static let focusRingWidth: CGFloat = 0
+    static let focusOutlineWidth: CGFloat = 0
+    static let focusOutlineInset: CGFloat = 0
+    static let cardRestingShadowRadius: CGFloat = 0
+    static let circleControlDiameter: CGFloat = 36
+    #else
+    static let cardsLiftOnFocus = false
+    static let focusScale: CGFloat = 1.0
+    static let focusRingWidth: CGFloat = 0
+    static let focusOutlineWidth: CGFloat = 0
+    static let focusOutlineInset: CGFloat = 0
+    static let cardRestingShadowRadius: CGFloat = 0
+    /// The 44pt minimum touch target.
+    static let circleControlDiameter: CGFloat = 44
+    #endif
+
+    /// Ring drawn around the card representing the page you came from. Not a
+    /// focus cue — it persists whether or not anything is focused.
+    static let currentItemRingWidth: CGFloat = 2
+
+    /// Louder focus treatment for a control that stands alone on a screen —
+    /// the Next Up card, the player's own transport — rather than sitting in
+    /// a crowded hero row where every neighbour would compete with it.
+    static let focusScaleProminent: CGFloat = focusScale == 1.0 ? 1.0 : 1.085
+    static let focusOutlineWidthProminent: CGFloat = focusOutlineWidth == 0 ? 0 : 4
+    static let focusOutlineInsetProminent: CGFloat = focusOutlineInset == 0 ? 0 : 7
+
+    // MARK: - Detail hero controls
+
+    #if os(tvOS)
+    /// The play pill is the one element the eye should land on first.
+    static let pillHorizontalPadding: CGFloat = 54
+    static let pillVerticalPadding: CGFloat = 26
+    #elseif os(macOS)
+    static let pillHorizontalPadding: CGFloat = 20
+    static let pillVerticalPadding: CGFloat = 12
+    #else
+    static let pillHorizontalPadding: CGFloat = 24
+    static let pillVerticalPadding: CGFloat = 15
+    #endif
+
+    /// A secondary pill sits beside the primary and gives back some of its
+    /// footprint so the two read as a hierarchy rather than a pair.
+    static let secondaryPillPaddingScale: CGFloat = 0.78
+
+    #if os(tvOS)
+    /// Label gutter in the Details key/value list — wide enough that the
+    /// longest label ("Content Rating") sets one column, not each row.
+    static let factsLabelWidth: CGFloat = 260
+    /// A measured line length for long-form copy at this viewing distance.
+    static let readableContentWidth: CGFloat = 1400
+    #elseif os(macOS)
+    static let factsLabelWidth: CGFloat = 120
+    static let readableContentWidth: CGFloat = 720
+    #else
+    static let factsLabelWidth: CGFloat = 100
+    static let readableContentWidth: CGFloat = .infinity
+    #endif
 
     // MARK: - Media Aspect Ratios
 
     /// Movie/show poster (2:3.3 — Plezy uses slightly taller posters)
     static let posterAspectRatio: CGFloat = 2.0 / 3.3
-
-    /// Backdrop/banner image (16:9)
-    static let backdropAspectRatio: CGFloat = 16.0 / 9.0
 
     /// Episode thumbnail (16:9)
     static let thumbnailAspectRatio: CGFloat = 16.0 / 9.0
@@ -180,9 +269,6 @@ struct ContinuumTheme {
     /// Slow — image crossfades, content reveals (300ms)
     static let slowDuration: Double = 0.30
 
-    /// Standard transition duration
-    static let animationDuration: Double = 0.20
-
     /// Standard spring animation
     static let springAnimation = Animation.spring(response: 0.35, dampingFraction: 0.85)
 
@@ -205,22 +291,11 @@ struct ContinuumTheme {
         static let tabPaddingVertical: CGFloat = 12
         /// Square hit target of the search button and the profile avatar.
         static let barIconSize: CGFloat = 58
-        /// Gap between the search button and the avatar.
-        static let barTrailingSpacing: CGFloat = 22
         static let wordmarkSize: CGFloat = 26
         /// Wordmark letter tracking — +0.34 em.
         static let wordmarkTracking: CGFloat = 26 * 0.34
         /// Bar opacity while focus is down in the content zone (§5.1).
         static let barDimmedOpacity: Double = 0.7
-
-        /// Pill row offset from the screen top — 30 below the bar (§5.2).
-        static let pillRowTopInset: CGFloat = 150
-        static let pillSpacing: CGFloat = 12
-        static let pillLabelSize: CGFloat = 19
-        static let pillPaddingHorizontal: CGFloat = 22
-        static let pillPaddingVertical: CGFloat = 9
-        /// Right-aligned scope caption in the pill row.
-        static let pillCaptionSize: CGFloat = 18
         /// Upward drift of incoming sub-pill content on a pill switch
         /// (§4.2: "200 ms crossfade + 12 px upward drift of incoming
         /// content"). Paired with the shared 200 ms `normalDuration`.
@@ -233,10 +308,6 @@ struct ContinuumTheme {
         /// Top inset for library-tab content that has no hero of its own
         /// (grids, chip clouds): clears the bar and the pill row.
         static let libraryContentTopInset: CGFloat = 216
-        /// Extra top inset the featured hero needs on library tabs so its
-        /// card deck starts below the pill row instead of under it.
-        static let libraryHeroExtraTopInset: CGFloat = 88
-
         /// Anchored dropdown panel (§5.3/§5.8).
         static let dropdownWidth: CGFloat = 460
         static let dropdownCornerRadius: CGFloat = 22
@@ -258,11 +329,6 @@ struct ContinuumTheme {
         static let cascadeOpenDuration: Double = 0.18
         /// Scrim fade duration behind the cascade (§4.2, 150 ms).
         static let cascadeScrimDuration: Double = 0.15
-        /// Width of the notch tab pointing from a panel to its anchor.
-        static let cascadeNotchWidth: CGFloat = 20
-        /// Height the notch protrudes toward its anchor.
-        static let cascadeNotchHeight: CGFloat = 10
-
         /// Level-1 library row metrics (§5.3).
         static let cascadeRowTextSize: CGFloat = 22
         static let cascadeRowPaddingHorizontal: CGFloat = 18
@@ -283,8 +349,6 @@ struct ContinuumTheme {
         static let flyoutRowPaddingVertical: CGFloat = 13
         static let flyoutRowCornerRadius: CGFloat = 12
         static let flyoutHeaderSize: CGFloat = 13
-        /// Open scale-up for the flyout (§4.2, 0.97 → 1.0).
-        static let flyoutOpenScale: CGFloat = 0.97
         static let flyoutOpenDuration: Double = 0.16
         /// Rest debounce before the flyout follows focus to a new library
         /// row (§5.3) — rolling the list never thrashes the flyout.
@@ -344,17 +408,6 @@ struct ContinuumTheme {
         /// Regular rows keep the wider tvOS padding so focus lift has more
         /// space in standard scroll layouts.
         static let rowBandCardVerticalPadding: CGFloat = 14
-        /// Duration for the vertical row-stack scroll when paging up/down.
-        static let rowBandScrollDuration: Double = 0.18
-        /// Distance the outgoing focused row travels as it fades behind the
-        /// marquee/title area during row paging.
-        static let rowBandExitOffset: CGFloat = 140
-        /// Passive row preview tint so it reads as available content without
-        /// competing with the focused row.
-        static let rowPreviewOpacity: Double = 0.74
-        /// Number of preview cards to paint. Enough to fill the visible width
-        /// without doing unnecessary image work for off-screen cards.
-        static let rowPreviewItemLimit = 8
         /// Dense poster row (§5.6) for Home + Browse. Enough columns that a
         /// full poster row (header + 2:3 poster + title/year) fits in the top
         /// of the lower-half row band while leaving a preview of the next row
@@ -364,9 +417,10 @@ struct ContinuumTheme {
 
         // MARK: Collections poster grid (§6.3)
 
-        /// Collections render as standard 2:3 poster tiles (the canonical
-        /// `posterCardWidth` poster) in a grid that mirrors the library Browse
-        /// grid, so a collection reads as a first-class browseable card.
+        /// Collections render as standard 2:3 poster tiles — the same aspect
+        /// ratio the cards state for themselves — in a grid that mirrors the
+        /// library Browse grid, so a collection reads as a first-class
+        /// browseable card.
         /// 6 flexible columns within the safe area.
         static let collectionGridColumnCount = 6
         static let collectionGridColumnSpacing: CGFloat = 40

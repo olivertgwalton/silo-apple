@@ -38,7 +38,7 @@ struct SeriesDownloadMenuButton: View {
             )
     }
 
-    /// Glyph over caption, matching `PhoneLabeledAction`'s metrics.
+    /// Glyph over caption, matching `DetailLabeledAction`'s metrics.
     private var labeledLabel: some View {
         VStack(spacing: 6) {
             Image(systemName: isMonitored ? "arrow.down.circle.fill" : "arrow.down.to.line")

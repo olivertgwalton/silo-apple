@@ -4,43 +4,10 @@ import SwiftUI
 ///
 /// One view for every platform. The phone and Apple TV versions were
 /// structurally identical — same rows, same dividers, same alignment — and
-/// differed only in the seven numbers below, so those are a parameter rather
-/// than a second copy of the layout.
+/// the numbers that differed now come from the semantic type scale and
+/// `ContinuumTheme`, both already forked per platform in one place.
 struct DetailFactsSection: View {
     let detail: ItemDetail
-    var metrics: Metrics = .compact
-
-    struct Metrics {
-        let columnGap: CGFloat
-        let labelSize: CGFloat
-        let labelTracking: CGFloat
-        let labelWidth: CGFloat
-        let valueSize: CGFloat
-        let rowPadding: CGFloat
-        let maxWidth: CGFloat
-
-        /// Phone and Mac.
-        static let compact = Metrics(
-            columnGap: 16,
-            labelSize: 11,
-            labelTracking: 1.2,
-            labelWidth: 100,
-            valueSize: 14,
-            rowPadding: 12,
-            maxWidth: .infinity
-        )
-
-        /// Apple TV, read from across a room.
-        static let television = Metrics(
-            columnGap: 64,
-            labelSize: 18,
-            labelTracking: 2.0,
-            labelWidth: 260,
-            valueSize: 22,
-            rowPadding: 22,
-            maxWidth: 1400
-        )
-    }
 
     var body: some View {
         let facts = DetailFacts.assemble(from: detail)
@@ -52,21 +19,21 @@ struct DetailFactsSection: View {
                             .fill(Color.white.opacity(0.08))
                             .frame(height: 1)
                     }
-                    HStack(alignment: .top, spacing: metrics.columnGap) {
+                    HStack(alignment: .top, spacing: ContinuumTheme.padding) {
                         Text(fact.label.uppercased())
-                            .font(.system(size: metrics.labelSize, weight: .bold))
-                            .tracking(metrics.labelTracking)
+                            .font(.continuumSectionEyebrow)
+                            .tracking(ContinuumTheme.sectionEyebrowTracking)
                             .foregroundColor(.continuumOnSurface.opacity(0.5))
-                            .frame(width: metrics.labelWidth, alignment: .leading)
+                            .frame(width: ContinuumTheme.factsLabelWidth, alignment: .leading)
                         Text(fact.value)
-                            .font(.system(size: metrics.valueSize, weight: .regular))
+                            .font(.continuumBody)
                             .foregroundColor(.continuumOnSurface)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .padding(.vertical, metrics.rowPadding)
+                    .padding(.vertical, ContinuumTheme.smallPadding)
                 }
             }
-            .frame(maxWidth: metrics.maxWidth, alignment: .leading)
+            .frame(maxWidth: ContinuumTheme.readableContentWidth, alignment: .leading)
         }
     }
 }
