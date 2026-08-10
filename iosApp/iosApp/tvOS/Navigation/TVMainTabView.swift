@@ -299,14 +299,12 @@ struct TVMainTabView: View {
         case .home:
             HomeView(
                 homeFocusRequest: contentFocusRequest,
-                isTopMenuFocused: isTopMenuFocused,
-                onTopMenuFocusRequest: { focusTopMenuIfVisible() }
+                isTopMenuFocused: isTopMenuFocused
             )
         case .recommendations:
             RecommendationsView(
                 focusRequest: contentFocusRequest,
-                isTopMenuFocused: isTopMenuFocused,
-                onTopMenuFocusRequest: { focusTopMenuIfVisible() }
+                isTopMenuFocused: isTopMenuFocused
             )
         case .libraryType(let type):
             let active = activeLibrary(for: type)
@@ -316,8 +314,7 @@ struct TVMainTabView: View {
                 activeLibrary: active,
                 selectedPill: pillSelection(for: type),
                 focusRequest: contentFocusRequest,
-                isTopMenuFocused: isTopMenuFocused,
-                onTopMenuFocusRequest: { focusTopMenuIfVisible() }
+                isTopMenuFocused: isTopMenuFocused
             )
             // Re-create the tab body when the type changes so per-type
             // section fetches reset cleanly (pill selection survives in
@@ -332,8 +329,7 @@ struct TVMainTabView: View {
                     activeLibrary: library,
                     selectedPill: shortcutPillSelection(for: libraryId, categoryType: type),
                     focusRequest: contentFocusRequest,
-                    isTopMenuFocused: isTopMenuFocused,
-                    onTopMenuFocusRequest: { focusTopMenuIfVisible() }
+                    isTopMenuFocused: isTopMenuFocused
                 )
                 .id(library.id)
             } else {
@@ -346,8 +342,7 @@ struct TVMainTabView: View {
             }
         case .calendar:
             CalendarView(
-                focusRequest: contentFocusRequest,
-                onTopMenuFocusRequest: { focusTopMenuIfVisible() }
+                focusRequest: contentFocusRequest
             )
         }
     }

@@ -47,7 +47,6 @@ struct MediaRow: View {
     var focusRequest: Int = 0
     var onRemoveFromContinueWatching: ((SectionItem) -> Void)? = nil
     var onSetWatched: ((SectionItem, Bool) async -> Bool)? = nil
-    var onMoveUp: (() -> Void)? = nil
     /// tvOS-only: reports which of the row's items holds card focus —
     /// the Skyline focus marquee mirrors it. Fires on focus gain only;
     /// focus leaving the row (nil) is deliberately not reported so the
@@ -61,7 +60,6 @@ struct MediaRow: View {
     var cardVerticalPadding: CGFloat? = nil
     /// Down at the row's boundary — used by the Skyline section pager to
     /// page to the next section (there is no row geometrically below).
-    var onMoveDown: (() -> Void)? = nil
 
     @FocusState private var focusedItemId: String?
     #if os(tvOS)
@@ -88,7 +86,6 @@ struct MediaRow: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         #if os(tvOS)
         .focusSection()
-        .modifier(TVRowMoveHandler(onMoveUp: onMoveUp, onMoveDown: onMoveDown))
         .onChange(of: focusedItemId) { _, newValue in
             guard let newValue,
                   let item = items.first(where: { $0.contentId == newValue }) else { return }
@@ -322,30 +319,6 @@ struct MediaRow: View {
 }
 
 #if os(tvOS)
-/// Bridges the row's boundary up/down move commands to the host. Only
-/// attaches an `onMoveCommand` when at least one handler is supplied, so a
-/// row that should stay out of the focus path (e.g. a non-paged row)
-/// never intercepts the commands the focus engine needs for normal
-/// row-to-row movement.
-private struct TVRowMoveHandler: ViewModifier {
-    let onMoveUp: (() -> Void)?
-    let onMoveDown: (() -> Void)?
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if let onMoveDown {
-            // Down only: the section pager has no row below to move to, so
-            // the engine has no destination and the parent must act. Up needs
-            // nothing — the bar is a normal focus region again.
-            content.onMoveCommand { direction in
-                if direction == .down { onMoveDown() }
-            }
-        } else {
-            content
-        }
-    }
-}
-
 private extension View {
     /// Routes both initial and user-initiated (d-pad) focus into the
     /// row's first card. The `.userInitiated` priority is the bit that

@@ -22,8 +22,6 @@ struct TVSkylineSectionFeed: View {
     /// Whether the top menu currently holds focus. A late content load must
     /// not steal focus while the user is up in the menu.
     var isTopMenuFocused: Bool = false
-    /// Up at the first page hands focus to the top bar.
-    let onTopMenuFocusRequest: (() -> Void)?
     /// Open a content item (detail).
     let onItemTap: (String) -> Void
     /// Optional Home-only action. Library feeds leave this nil.
@@ -148,13 +146,11 @@ struct TVSkylineSectionFeed: View {
             prefersDefaultFocusOnFirstItem: isFirstRow,
             defaultFocusPriority: .automatic,
             focusRequest: isFirstRow ? contentFocusToken : 0,
-            onMoveUp: isFirstRow ? onTopMenuFocusRequest : nil,
             onItemFocus: { item in
                 previewFocusedItem(item, in: section)
             },
             cardWidth: ContinuumTheme.Skyline.densePosterCardWidth,
             cardVerticalPadding: ContinuumTheme.Skyline.rowBandCardVerticalPadding,
-            onMoveDown: nil
         )
     }
 

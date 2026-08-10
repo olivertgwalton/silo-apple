@@ -31,13 +31,11 @@ struct TVLibraryGridView: View {
     let isTopMenuFocused: Bool
     /// Boundary hand-up from the control row to the root top menu. Nil for
     /// pushed grid routes where the root menu is not visible.
-    let onTopMenuFocusRequest: (() -> Void)?
 
     @State private var viewModel: TVLibraryGridViewModel
     @State private var selectedPrefix: String? = nil
     @State private var openPanel: TVBrowsePanel? = nil
     @State private var controlFocusRequest = 0
-    @State private var gridFocusRequest = 0
     @State private var lastShellFocusRequest = 0
 
     @Environment(AppRouter.self) private var router
@@ -53,7 +51,6 @@ struct TVLibraryGridView: View {
         topContentInset: CGFloat = ContinuumTheme.smallPadding,
         focusRequest: Int = 0,
         isTopMenuFocused: Bool = false,
-        onTopMenuFocusRequest: (() -> Void)? = nil
     ) {
         self.libraryId = libraryId
         self.libraryName = libraryName
@@ -65,7 +62,6 @@ struct TVLibraryGridView: View {
         self.topContentInset = topContentInset
         self.focusRequest = focusRequest
         self.isTopMenuFocused = isTopMenuFocused
-        self.onTopMenuFocusRequest = onTopMenuFocusRequest
         _viewModel = State(initialValue: TVLibraryGridViewModel(
             libraryId: libraryId,
             libraryType: libraryType,
@@ -156,8 +152,6 @@ struct TVLibraryGridView: View {
                     sortDirection: viewModel.filter.sort.directionLabel(for: viewModel.filter.effectiveOrder),
                     filterCount: viewModel.filter.activeFacetCount,
                     focusRequest: controlFocusRequest,
-                    onMoveUp: onTopMenuFocusRequest,
-                    onMoveDown: claimGridFocus,
                     onSort: { openPanel = .sort },
                     onFilter: { openPanel = .filter }
                 )
@@ -187,8 +181,7 @@ struct TVLibraryGridView: View {
                             Task { await viewModel.loadMoreIfNeeded() }
                             let end = min(index + 48, viewModel.items.count)
                             viewModel.prefetchPosters(in: index..<end)
-                        },
-                        focusRequest: gridFocusRequest
+                        }
                     )
                     .padding(.horizontal, ContinuumTheme.safePadding)
                 }
@@ -204,11 +197,6 @@ struct TVLibraryGridView: View {
         lastShellFocusRequest = request
         guard !isTopMenuFocused else { return }
         controlFocusRequest += 1
-    }
-
-    private func claimGridFocus() {
-        guard !viewModel.items.isEmpty else { return }
-        gridFocusRequest += 1
     }
 
     private var emptyGridIcon: String {

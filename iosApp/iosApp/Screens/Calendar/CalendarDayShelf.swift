@@ -151,7 +151,9 @@ private struct TVShelfMoveHandler: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         if let onMoveUp {
-            content
+            content.onMoveCommand { direction in
+                if direction == .up { onMoveUp() }
+            }
         } else {
             content
         }
